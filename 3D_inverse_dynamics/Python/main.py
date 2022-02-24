@@ -1,5 +1,6 @@
 """Import modules"""
 from scipy.spatial.transform import Rotation as R
+import numpy
 import matplotlib.pyplot as plt
 from numpy import linalg as la
 import functions as f
@@ -135,6 +136,7 @@ plt.title('Moments Projected on Forearm Coordination System')
 plt.xlabel('Samples')
 plt.ylabel('Moment [Nm]')
 plt.legend()
+plt.show()
 
 
 
