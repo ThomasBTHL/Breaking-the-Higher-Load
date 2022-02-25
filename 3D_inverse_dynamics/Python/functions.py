@@ -2890,7 +2890,6 @@ def visual_check_markers(m1=[], m2=[], m3=[], m4=[], c3dFile=[], title=''):
     plt.title(title + coordinate1 + ' coordinate')
     plt.ylabel('position in [mm]')
     plt.xlabel('samples')
-    plt.show()
     plt.legend()
 
     ax_y = fig.add_subplot(312)
@@ -2905,7 +2904,6 @@ def visual_check_markers(m1=[], m2=[], m3=[], m4=[], c3dFile=[], title=''):
     plt.title(coordinate2 + ' coordinate')
     plt.ylabel('postion in [mm]')
     plt.xlabel('samples')
-    plt.show()
     plt.legend()
 
     ax_z = fig.add_subplot(313)
@@ -2956,7 +2954,6 @@ def visual_check_markers_switching(m1=[], m2=[], m3=[], m4=[], c3dFile=[], chang
     plt.title(title + coordinate1 + ' coordinate')
     plt.ylabel('position in [mm]')
     plt.xlabel('samples')
-    plt.show()
 
     ax_y = fig.add_subplot(312)
     if m1:
@@ -2970,7 +2967,6 @@ def visual_check_markers_switching(m1=[], m2=[], m3=[], m4=[], c3dFile=[], chang
     plt.title(coordinate2 + ' coordinate')
     plt.ylabel('postion in [mm]')
     plt.xlabel('samples')
-    plt.show()
 
     ax_z = fig.add_subplot(313)
     if m1:

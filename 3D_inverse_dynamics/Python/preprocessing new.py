@@ -110,7 +110,7 @@ if choice in yes:
 
     for i in range(len(index) - 1):
         markersNew[changeMarker1].iloc[[int(index[i] - 1), int(index[i + 1] + 1)], :], markersNew[changeMarker2].iloc[
-                                                                                       [int(index[i]Ωz xdeë3311),
+                                                                                       [int(index[i]),
                                                                                         int(index[i + 1])],
                                                                                        :] = np.nan, np.nan
         markersNew[changeMarker1].iloc[int(index[i]):int(index[i + 1]), :], markersNew[changeMarker2].iloc[
@@ -206,25 +206,24 @@ if choice in yes:
     markerName = 'RRS'
     coordinateName = 'Y'
     visual_check_smoothing_effect(markerName, coordinateName, markersNew, markersFilter)
+
+    """
+    5) Save the filtered corrected data in binary form 
+    """
+    # Implement the filtered markers into the original data set
+    markers_filtered = markers_c3d.copy()
+    markers_filtered["PITCH_0"] = markersFilter  # Gives error if choice == no for smoothing, move to within loop?
+
+    # Path where the pickle will be saved. Last part will be the name of the file
+    filename = 'data/Pitch/PP01_Pickle_filtered'
+
+    # Initialize the pickle file
+    outfile = open(filename, 'wb')
+
+    # Write the dictionary into the binary file
+    pickle.dump(markers_c3d, outfile)
+    outfile.close()
+
+    print('Filtered dictionary has been saved.')
 else:
     print('the data has not been smoothed')
-
-
-"""
-5) Save the filtered corrected data in binary form 
-"""
-# Implement the filtered markers into the original data set
-markers_filtered = markers_c3d.copy()
-markers_filtered["PITCH_0"] = markersFilter
-
-# Path where the pickle will be saved. Last part will be the name of the file
-filename = 'data/Pitch/PP01_Pickle_filtered'
-
-# Initialize the pickle file
-outfile = open(filename,'wb')
-
-# Write the dictionary into the binary file
-pickle.dump(markers_c3d,outfile)
-outfile.close()
-
-print('Filtered dictionary has been saved.')
