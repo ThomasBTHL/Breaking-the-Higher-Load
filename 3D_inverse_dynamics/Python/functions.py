@@ -28,6 +28,7 @@ print("Import of Packages Successful!")
 
 """3D inverse dynamic model is developed and written by Ton Leenen, PhD-Candidate Vrije Universiteit Amsterdam
 Contact E-Mail: a.j.r.leenen@vu.nl
+Changes made by Thomas van Hogerwou
 
 Version 1.5 (2020-07-15)"""
 
