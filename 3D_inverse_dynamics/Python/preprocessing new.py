@@ -40,11 +40,10 @@ Version 3.0 (2020-09-04) Added the save with pickle
 """
 
 # Define the path to load the data
-path = os.path.abspath(os.path.join("data\Optitrack_Data\Preprocessed_data\pp01_c3d"))
+path = os.path.abspath(os.path.join("data/Optitrack_Data/Preprocessed_data/pp01_c3d/"))
 ## Load the c3d files to xlsx
 markers_c3d = load_c3d(path)
 markers = markers_c3d['PITCH_0']
-
 
 """ 
 1) Visual check marker data
@@ -56,20 +55,20 @@ no = {'no', 'n'}
 choice = input().lower()
 if choice in yes:
     # Check right Forearm and for switching
-    #visual_check_markers('RUS', 'RRS', 'RMHE', 'RLHE', markers)
-    visual_check_markers_switching('VU_Baseball_R_RUS', 'VU_Baseball_R_RRS', 'VU_Baseball_R_RMHE', 'VU_Baseball_R_RLHE', markers,title='ForeArm')
+    visual_check_markers('VU_Baseball_R_RUS', 'VU_Baseball_R_RRS', 'VU_Baseball_R_RMHE', 'VU_Baseball_R_RLHE', markers)
+    #visual_check_markers_switching('VU_Baseball_R_RUS', 'VU_Baseball_R_RRS', 'VU_Baseball_R_RMHE', 'VU_Baseball_R_RLHE', markers,title='ForeArm')
 
     # Check right shoulder and for switching
-    #visual_check_markers('RAC1', 'RAC2', 'RAC3', [], markers)
-    visual_check_markers_switching('VU_Baseball_R_RAC', [], [], [], markers, title='Shoulder')
+    visual_check_markers('VU_Baseball_R_RAC', [], [], [], markers)
+    #visual_check_markers_switching('VU_Baseball_R_RAC', [], [], [], markers, title='Shoulder')
 
     # Check Trunk markers
-    #visual_check_markers('IJ', 'PX', 'C7', 'T8', markers)
-    visual_check_markers_switching('VU_Baseball_R_IJ', 'VU_Baseball_R_PX', 'VU_Baseball_R_C7', 'VU_Baseball_R_T8', markers,title='Trunk')
+    visual_check_markers('VU_Baseball_R_IJ', 'VU_Baseball_R_PX', 'VU_Baseball_R_C7', 'VU_Baseball_R_T8', markers)
+    #visual_check_markers_switching('VU_Baseball_R_IJ', 'VU_Baseball_R_PX', 'VU_Baseball_R_C7', 'VU_Baseball_R_T8', markers,title='Trunk')
 
     # Check Pelvic markers
-    #visual_check_markers('LASIS', 'RASIS', 'LPSIS', 'RPSIS', markers)
-    visual_check_markers_switching('VU_Baseball_R_LASIS', 'VU_Baseball_R_RASIS', 'VU_Baseball_R_LPSIS', 'VU_Baseball_R_RPSIS', markers, title='Pelvic')
+    visual_check_markers('VU_Baseball_R_LASIS', 'VU_Baseball_R_RASIS', 'VU_Baseball_R_LPSIS', 'VU_Baseball_R_RPSIS', markers)
+    #visual_check_markers_switching('VU_Baseball_R_LASIS', 'VU_Baseball_R_RASIS', 'VU_Baseball_R_LPSIS', 'VU_Baseball_R_RPSIS', markers, title='Pelvic')
 else:
     print('no markers will be plotted.')
 
@@ -169,13 +168,14 @@ markers_unfiltered = markers_c3d.copy()
 markers_unfiltered["PITCH_0"] = markersNew
 
 # Path where the pickle will be saved. Last part will be the name of the file
-filename = 'data/Pitch/PP01_Pickle_unfiltered'
+# "data/Optitrack_Data/Preprocessed_data/pp01_c3d/"
+filename = 'data/Unfiltered_Grouped/PP01/PP01_10_Pickle_unfiltered' # Change to automatic naming
 
 # Initialize the pickle file
 outfile = open(filename,'wb')
 
 # Write the dictionary into the binary file
-pickle.dump(markers_c3d,outfile)
+pickle.dump(markers_unfiltered,outfile)
 outfile.close()
 
 print('Unfiltered dictionary has been saved.')
@@ -226,3 +226,17 @@ if choice in yes:
     print('Filtered dictionary has been saved.')
 else:
     print('the data has not been smoothed')
+
+"""
+6) Cut data
+"""
+print('1) Do you want to cut the data?')
+yes = {'yes', 'y', 'ye', ''}
+no = {'no', 'n'}
+
+choice = input().lower()
+if choice in yes:
+    ball_pickups = ball_pickup_indexs('VU_Baseball_R_RUS', 'VU_Baseball_R_RRS', 'VU_Baseball_R_RMHE', 'VU_Baseball_R_RLHE', markers)
+    print(ball_pickups)
+else:
+    print('Data will not be cut')

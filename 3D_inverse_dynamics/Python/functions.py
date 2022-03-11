@@ -15,6 +15,7 @@ from tkinter.ttk import *
 from tkinter import *
 import scipy
 from scipy.signal import butter as butter
+from scipy.signal import find_peaks
 import time
 import math
 import copy
@@ -3041,3 +3042,56 @@ def visual_check_smoothing_effect(markerName, coordinateName, markers, markersNe
 
     plt.show(block=False)
 
+def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
+    """Determines the index of ball pickups for splitting throwing sets using RRS Y coordinate.
+
+    Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+    Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+    Version 1.0 (2022-03-11)
+
+    Arguments:
+        markers: Marker dictionary
+    Returns:
+        ball_pickups: list of ball pickup indexes correlating to dictionary indexes
+    """
+
+    # Initialize variables
+    ball_pickups = []
+    coordinate1 = 'X'
+    coordinate2 = 'Y'
+    coordinate3 = 'Z'
+
+    # Create figure
+    plt.figure()
+    if m1:
+        plt.plot(markers[m1][coordinate2], label=m1)
+    if m2:
+        plt.plot(markers[m2][coordinate2], label=m2)
+    if m3:
+        plt.plot(markers[m3][coordinate2], label=m3)
+    if m4:
+        plt.plot(markers[m4][coordinate2], label=m4)
+    plt.title(coordinate2 + ' coordinate of Lower Arm')
+    plt.ylabel('position in [mm]')
+    plt.xlabel('samples')
+    plt.legend()
+
+    tuples = plt.ginput(9,30,show_clicks= True)
+    ball_pickups = tuples
+    return ball_pickups
+
+def cut_markers(markers=[], ball_pickups=[]):
+    """Cuts marker data at indexs given by ball pickups
+
+    Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+    Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+    Version 1.0 (2022-03-11)
+
+    Arguments:
+        markers: Marker dictionary
+        ball_pickups: indexs of ball pickup
+    Returns:
+        : list of ball pickup indexes correlating to dictionary indexes
+    """
