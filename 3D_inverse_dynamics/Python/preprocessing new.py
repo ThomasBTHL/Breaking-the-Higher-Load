@@ -230,13 +230,30 @@ else:
 """
 6) Cut data
 """
-print('1) Do you want to cut the data?')
+print('1) Do you want to cut and save the data?')
 yes = {'yes', 'y', 'ye', ''}
 no = {'no', 'n'}
 
 choice = input().lower()
 if choice in yes:
-    ball_pickups = ball_pickup_indexs('VU_Baseball_R_RUS', 'VU_Baseball_R_RRS', 'VU_Baseball_R_RMHE', 'VU_Baseball_R_RLHE', markers)
-    print(ball_pickups)
+    if 'markersFilter' in locals():
+        ball_pickups = ball_pickup_indexs('VU_Baseball_R_RUS', 'VU_Baseball_R_RRS', 'VU_Baseball_R_RMHE', 'VU_Baseball_R_RLHE', markers)
+        markers_cut = cut_markers(markers_filtered['PITCH_0'], ball_pickups)  # Outputs dictionary of dictionaries contatining individual pitches, length = ballpickups + 1
+    else:
+        ball_pickups = ball_pickup_indexs('VU_Baseball_R_RUS', 'VU_Baseball_R_RRS', 'VU_Baseball_R_RMHE', 'VU_Baseball_R_RLHE', markers)
+        markers_cut = cut_markers(markers_unfiltered['PITCH_0'], ball_pickups)  # Outputs dictionary of dictionaries contatining individual pitches, length = ballpickups + 1
+
+    # Path where the pickle will be saved. Last part will be the name of the file
+    filename = 'data/Pickle_Jars/PP01/PP01_0_10'
+
+    # Initialize the pickle file
+    outfile = open(filename, 'wb')
+
+    # Write the dictionary into the binary file
+    pickle.dump(markers_cut, outfile)
+    outfile.close()
+
+    print('Pickle Jar dictionary has been saved.')
+
 else:
     print('Data will not be cut')

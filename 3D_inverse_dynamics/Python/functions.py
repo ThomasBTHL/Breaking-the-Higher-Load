@@ -3057,7 +3057,8 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
     """
 
     # Initialize variables
-    ball_pickups = []
+    ball_pickups = [0]
+    tuples = []
     coordinate1 = 'X'
     coordinate2 = 'Y'
     coordinate3 = 'Z'
@@ -3078,7 +3079,13 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
     plt.legend()
 
     tuples = plt.ginput(9,30,show_clicks= True)
-    ball_pickups = tuples
+    for i in range(len(tuples)):
+        ball_pickups.append(np.round(tuples[i][0]))
+
+    ball_pickups.append(len(markers[m1])+1)
+
+    ball_pickups = [int(x) for x in ball_pickups]
+
     return ball_pickups
 
 def cut_markers(markers=[], ball_pickups=[]):
@@ -3087,11 +3094,23 @@ def cut_markers(markers=[], ball_pickups=[]):
     Function is developed and written by Thomas van Hogerwou, master student TU-Delft
     Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
 
-    Version 1.0 (2022-03-11)
+    Version 1.0 (2022-03-14)
 
     Arguments:
         markers: Marker dictionary
         ball_pickups: indexs of ball pickup
     Returns:
-        : list of ball pickup indexes correlating to dictionary indexes
+        cut_markers : dictionary contatining dictionarys of each individual pitch
     """
+    markers_cut = {}
+
+    for i in range(len(ball_pickups)-1):
+        markers_cut["pitch_{0}".format(i+1)] = markers.copy()
+
+    i = 0
+
+    for pitch in markers_cut:
+        for marker in markers_cut["pitch_1"]:
+            markers_cut[pitch][marker] = markers_cut[pitch][marker].iloc[ball_pickups[i]:ball_pickups[i+1]]
+        i = i + 1
+    return markers_cut
