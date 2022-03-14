@@ -310,7 +310,7 @@ def load_c3d_innings(path):
             # Loop through the markers and frames containing the position data and reorganise and combine the data from the .c3d binary file in the dictionary
             for markers in tqdm(range(reader.point_used), unit="marker"):
                 # Displays progressbar in console
-                sleep(0.1)
+                sleep(0.001)
                 pass
 
                 for samples in range(len(data)):
@@ -3124,7 +3124,7 @@ def visual_check_smoothing_effect(markerName, coordinateName, markers, markersNe
     plt.xlabel('samples')
     plt.tight_layout(pad=0.5)
 
-    plt.show(block=False)
+    plt.show()
 
 def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
     """Determines the index of ball pickups for splitting throwing sets using RRS Y coordinate.
@@ -3143,9 +3143,7 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
     # Initialize variables
     ball_pickups = [0]
     tuples = []
-    coordinate1 = 'X'
     coordinate2 = 'Y'
-    coordinate3 = 'Z'
 
     # Create figure
     plt.figure()

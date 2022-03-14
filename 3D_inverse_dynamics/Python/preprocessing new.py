@@ -208,7 +208,7 @@ for Innings in markers_c3d:
             markersFilter[key]['Y'] = savgol_filter(markersNew[key]['Y'], window_length, poly_order)
             markersFilter[key]['Z'] = savgol_filter(markersNew[key]['Z'], window_length, poly_order)
 
-        markerName = 'RRS'
+        markerName = 'VU_Baseball_R_RRS'
         coordinateName = 'Y'
         visual_check_smoothing_effect(markerName, coordinateName, markersNew, markersFilter)
 
