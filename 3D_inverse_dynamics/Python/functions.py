@@ -246,6 +246,90 @@ def load_c3d(path):
 
     return dictionary
 
+def load_c3d_innings(path):
+    """Load the position data with .c3d binary files into dictionary.
+
+    Function is developed and written by Ton Leenen, PhD-Candidate Vrije Universiteit Amsterdam & Thomas van Hogerwou, Master student TU-Delft
+    Contact E-Mail: a.j.r.leenen@vu.nl
+
+    Version 1.0 (2020-03-19)
+
+    Arguments:
+        path: path or folder containing position data with .c3d binary files
+    Returns:
+        dictionary: containing (multiple) dataframe(s),
+        samples on the rows and X, Y, Z, on the columns and ordered by marker name (keys)
+    """
+
+    # Initialise counter to append calibration and measurement names
+    counter_1 = 0  # Define counter for calibrations
+    counter_2 = 1  # Define counter for measurements
+    counter_3 = 0  # Define counter for dictionary
+
+    # Initialise names
+    names = []
+
+    for f in sorted_alphanumeric(os.listdir(path)):
+        if f.endswith(".c3d"):
+            # Predefine calibration and measurement names
+            if f.endswith("Static.c3d"):
+                names.append("STATIC_" + str(counter_1))
+                counter_1 = counter_1 + 1
+            else:
+                names.append("Inning_" + str(counter_2))
+                counter_2 = counter_2 + 1
+
+    # Initialise dictionary and nested dictionary
+    dictionary = dict.fromkeys(names, dict())
+
+    # Load position data with .c3d binary files from path or folder
+    for f in sorted_alphanumeric(os.listdir(path)):
+
+        # Initialise variables labels and data
+        labels = []
+        data = []
+
+        # Load the .c3d binary files in the path or folder only
+        if f.endswith(".c3d"):
+            reader = c3d.Reader(open(f'{path}/{f}', 'rb'))
+            print("Loading " + str(f) + " - " + str(path + "/" + f))
+
+            # Predefined markers labels
+            [labels.append(reader.point_labels[index].strip()) for index in range(reader.point_used)]
+
+            # Read the frames containing the position data from the .c3d binary file into a numpy array
+            [data.append(points) for frame, points, analog in reader.read_frames()]
+
+            # Initialise nested dictionary
+            dictionary_nested = dict.fromkeys(labels, pd.DataFrame([]))
+
+            # Initialise pandas dataframes for key in nested dictionary containing ones
+            for markers in range(reader.point_used):
+                dictionary_nested[labels[markers]] = pd.DataFrame(data=np.ones((len(data), 3)), columns=["X", "Y", "Z"])
+
+            # Loop through the markers and frames containing the position data and reorganise and combine the data from the .c3d binary file in the dictionary
+            for markers in tqdm(range(reader.point_used), unit="marker"):
+                # Displays progressbar in console
+                sleep(0.1)
+                pass
+
+                for samples in range(len(data)):
+                    dictionary_nested[labels[markers]].iloc[samples, 0:3] = data[samples][markers,
+                                                                            0:3] / 1000  # Convert the position data directly from millimeter to meter
+
+                # Loop through the markers in dictionary_nested to replace zeros with NaN values
+                dictionary_nested[labels[markers]].replace(0, np.nan, inplace=True)
+
+            # Combine the data from the calibration and measurements in dictionary_nested in dictionary
+            dictionary[names[counter_3]] = dictionary_nested
+
+            # Counter to loop through names to be defined as key in dictionary
+            counter_3 = counter_3 + 1
+
+    print("Finished")
+
+    return dictionary
+
 
 def save_dict2xlsx(dictionary, path, filename):
     """Save the position data ordered in a dictionary in .csv format to path or folder
