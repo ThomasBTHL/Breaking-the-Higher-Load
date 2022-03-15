@@ -3160,7 +3160,7 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
     plt.xlabel('samples')
     plt.legend()
 
-    tuples = plt.ginput(9,30,show_clicks= True)
+    tuples = plt.ginput(15,30,show_clicks= True, mouse_add=1, mouse_pop=3, mouse_stop=2)
     for i in range(len(tuples)):
         ball_pickups.append(np.round(tuples[i][0]))
 
