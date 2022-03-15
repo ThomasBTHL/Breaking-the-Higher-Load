@@ -3144,9 +3144,21 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
     ball_pickups = [0]
     tuples = []
     coordinate2 = 'Y'
+    coordinate3 = 'Z'
 
     # Create figure
-    plt.figure()
+    fig = plt.figure()
+    fig.add_subplot(211)
+    if m1:
+        plt.plot(markers[m1][coordinate3], label=m1)
+    if m2:
+        plt.plot(markers[m2][coordinate3], label=m2)
+    if m3:
+        plt.plot(markers[m3][coordinate3], label=m3)
+    if m4:
+        plt.plot(markers[m4][coordinate3], label=m4)
+
+    fig.add_subplot(212)
     if m1:
         plt.plot(markers[m1][coordinate2], label=m1)
     if m2:
@@ -3160,7 +3172,7 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
     plt.xlabel('samples')
     plt.legend()
 
-    tuples = plt.ginput(15,30,show_clicks= True, mouse_add=1, mouse_pop=3, mouse_stop=2)
+    tuples = plt.ginput(15,-1,show_clicks= True, mouse_add=1, mouse_pop=3, mouse_stop=2)
     for i in range(len(tuples)):
         ball_pickups.append(np.round(tuples[i][0]))
 
