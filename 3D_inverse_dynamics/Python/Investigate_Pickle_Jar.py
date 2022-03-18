@@ -9,8 +9,8 @@ Version 1.5 (2021-05-18)"""
 
 
 # --- Define path where data is stored --- #
-path = "E:/MSc/Thesis/Breaking the Higher Load/3D_inverse_dynamics/Python/data/Pitches/Filtered/PP01/"
-filename = "Inning_6"
+path = "E:/MSc/Thesis/Breaking the Higher Load/3D_inverse_dynamics/Python/data/Pitches/Filtered/PP03/"
+filename = "Inning_1"
 
 # --- Load data from pickle --- #
 filenameIn = path + filename
