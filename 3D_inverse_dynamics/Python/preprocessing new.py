@@ -39,7 +39,7 @@ Version 2.0 (2020-07-14) Added the save file and make it interactive for plottin
 Version 3.0 (2020-09-04) Added the save with pickle
 """
 
-subject_name = "PP02"
+subject_name = "PP01"
 
 # Define the path to load the data
 path = os.path.abspath(os.path.join("data/Optitrack_Data/Preprocessed_data/" + subject_name + "_c3d/"))
@@ -210,7 +210,7 @@ for Innings in markers_c3d:
 
         markerName = 'VU_Baseball_R_RRS'
         coordinateName = 'Y'
-#        visual_check_smoothing_effect(markerName, coordinateName, markersNew, markersFilter)
+        visual_check_smoothing_effect(markerName, coordinateName, markersNew, markersFilter)
 
         """
         5) Save the filtered corrected data in binary form 

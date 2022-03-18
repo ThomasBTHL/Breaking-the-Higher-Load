@@ -22,8 +22,8 @@ Version 1.5 (2020-07-15)"""
 filter_state = 'Filtered'
 pitcher = 'PP01'
 Inning = 'Inning_6'
-pitch = 'pitch_3'
-fs = 120
+pitch = 'pitch_5'
+fs = 400
 
 # Selection based on right or left-handed pitchers
 if pitcher == 'PP03' or 'PP11':
