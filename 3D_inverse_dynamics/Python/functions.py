@@ -1,4 +1,5 @@
 """Import modules"""
+import numpy.linalg
 import scipy
 from scipy.spatial.transform import Rotation as R
 import scipy.signal as sp
@@ -1140,7 +1141,7 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, g
     """Inertial parameters according to the Zatsiorsky regression equations"""
 
     # Inertial parameters are calculated according to the Zatsiorsky regression equations
-    seg_length = np.nanmean(abs(segMSIAS[:, 2] - segMHJC[:, 2]) * 100)  # Conversion from mm to cm
+    seg_length = np.nanmean(abs(segMSIAS[:, 2] - segMHJC[:, 2]) * 100)  # Conversion from m to cm
 
     # Initialisation inertial_parameters_sub variable
     inertial_parameters = np.array([])
@@ -2900,31 +2901,43 @@ def MER_event(model):
     return MER, indexMER
 
 
-def butter_lowpass_filter(data, cutoff, fs, order=4):
-
+def butter_lowpass_filter(data, cutoff, fs, order):
     # low-pass parameters, using ba
     nyq = 0.5 * fs
     normal_cutoff = cutoff / nyq
     b, a = butter(order, normal_cutoff, btype='low', analog=False)
 
     # filter the data
-    data = data.to_numpy()
     data_out = copy.deepcopy(data)
-    for i in range(np.shape(data)[1]):                           # run over x,y,z separately
-        indices = np.where(np.invert(np.isnan(data[:,i])))[0]    # select the indices where data is not nan (in any value of the 2D array)
-        if len(indices) > 15:   # input for the filter must at least be of length 15 (3*max(len(a),len(b)))
-            y = scipy.signal.filtfilt(b, a, data[indices, i])  # filter the selected indices
-            data_out[indices, i] = y  # replace the data with filtered indices and keep the nan's
-        else:
-            data_out = data
+    indices = np.where(np.invert(np.isnan(data)))[0]    # select the indices where data is not nan (in any value of the 2D array)
 
-    # filter the data
-    # data = data.to_numpy()
-    # data_out = copy.deepcopy(data)
-    # for i in range(np.shape(data)[1]):                           # run over x,y,z separately
-    #     data_out[:,i] = scipy.signal.filtfilt(b, a, data[:,i])       # replace the data with filtered indices and keep the nan's
+    if len(indices) > 15:   # input for the filter must at least be of length 15 (3*max(len(a),len(b)))
+        y = scipy.signal.filtfilt(b, a, data[indices])  # filter the selected indices
+        data_out[indices] = y  # replace the data with filtered indices and keep the nan's
+    else:
+        data_out = data
 
     return data_out
+
+def butter_lowpass_filter_inning(marker_innings, cutoff, fs, order):
+    filtered_inning = copy.deepcopy(marker_innings)
+    for single_pitch in marker_innings:
+        # Interpolate the data and cut the data to the predefined window and apply a low-pass filter
+        # initialize dictionaries
+        pitch_int = copy.deepcopy(marker_innings[single_pitch])
+        pitch = dict()
+        keys_new = list(pitch_int.keys())   # all elements in the new marker data set
+
+        for k in range(len(pitch_int)):
+            key_new = keys_new[k]   # select element name
+
+            # filter the data separately for X,Y,Z
+            pitch[key_new] = pd.DataFrame() # initialize dictionary
+            pitch[key_new]['X'] = butter_lowpass_filter(np.array(pitch_int[key_new]['X']), cutoff, fs, order)
+            pitch[key_new]['Y'] = butter_lowpass_filter(np.array(pitch_int[key_new]['Y']), cutoff, fs, order)
+            pitch[key_new]['Z'] = butter_lowpass_filter(np.array(pitch_int[key_new]['Z']), cutoff, fs, order)
+        filtered_inning[single_pitch] = pitch
+    return filtered_inning
 
 
 def euler_angles(decomposition_order, gRseg, gRref = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]):
@@ -3148,7 +3161,7 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
 
     # Create figure
     fig = plt.figure()
-    fig.add_subplot(211)
+    fig.add_subplot(311)
     if m1:
         plt.plot(markers[m1][coordinate3], label=m1)
     if m2:
@@ -3157,8 +3170,11 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
         plt.plot(markers[m3][coordinate3], label=m3)
     if m4:
         plt.plot(markers[m4][coordinate3], label=m4)
+    plt.title(coordinate3 + ' coordinate of Lower Arm')
+    plt.ylabel('position in [mm]')
+    plt.legend()
 
-    fig.add_subplot(212)
+    fig.add_subplot(312)
     if m1:
         plt.plot(markers[m1][coordinate2], label=m1)
     if m2:
@@ -3171,6 +3187,11 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
     plt.ylabel('position in [mm]')
     plt.xlabel('samples')
     plt.legend()
+
+
+    fig.add_subplot(313)
+    plt.plot(numpy.linalg.norm(markers['VU_Baseball_R_C7'],axis = 1))
+    plt.title('Norm of C7')
 
     tuples = plt.ginput(15,-1,show_clicks= True, mouse_add=1, mouse_pop=3, mouse_stop=2)
     for i in range(len(tuples)):
@@ -3208,3 +3229,52 @@ def cut_markers(markers=[], ball_pickups=[]):
             markers_cut[pitch][marker] = markers_cut[pitch][marker].iloc[ball_pickups[i]:ball_pickups[i+1]]
         i = i + 1
     return markers_cut
+
+def trim_markers(markers, fs = 120, lead = .2, lag = .8):
+    """trims marker data based on max derivative of C7
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-14)
+
+       Arguments:
+           markers: Marker dictionary
+           lead: trim time in s before max V
+           lag: lag time in s after max V
+           wc: cuttoff frequency of filter
+       Returns:
+           trimmed_markers : dictionary contatining dictionarys of each individual pitch trimed to new indexes
+       """
+    index_offset = 0
+    pitches_trimmed = copy.deepcopy(markers)
+    for pitch in pitches_trimmed:
+        # order: C7-int-cut-filt
+        ## select C7 marker to define a window at which to cut the data
+        backmark = np.array(pitches_trimmed[pitch]['VU_Baseball_R_C7'])
+        knip = calc_derivative(backmark, fs) # take derivative of C7
+        knip_max = np.nanmax(knip[:,1])     # take the max of the derivative of C7 in the y-direction
+        index_cut = index_offset + int(np.array(np.where(knip[:,1] == knip_max)))  # select the index this event happens
+        print(index_cut)
+        # improve the data by removing * elements
+        keys = list(pitches_trimmed[pitch].keys())  # all the elements
+        for j in range(len(pitches_trimmed[pitch])):
+            in_keys = keys[j]
+            # if a * is present in the element name, remove the element
+            if '*' in in_keys:
+                pitches_trimmed[pitch].pop(in_keys)
+
+        # initialize dictionaries
+        pitch_int = copy.deepcopy(pitches_trimmed[pitch])
+        print(pitch_int['VU_Baseball_R_C7'])
+        pitch_in = dict()
+        keys_new = list(pitch_int.keys())   # all elements in the new marker data set
+
+        for k in range(len(pitch_int)):
+            key_new = keys_new[k]   # select element name
+            # if key_new != 'RAC1' and key_new != 'LMM': # certain pitches could cause errors
+            # cut the data
+            pitch_in[key_new] = pitch_int[key_new].loc[(index_cut - lead*fs):(index_cut + lag*fs), :] # cut the data .2s before and .4s after the index
+        pitches_trimmed[pitch] = pitch_in
+        index_offset = index_offset + len(markers[pitch]['VU_Baseball_R_C7'])
+    return pitches_trimmed

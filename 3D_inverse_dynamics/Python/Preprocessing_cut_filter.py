@@ -24,8 +24,9 @@ Version 1.0 (2022-03-18)
 subject_name = "PP03"
 
 # Filter parameters
-window_length = 11
-poly_order = 3
+cutoff = 25
+fs = 120
+order = 4
 
 # Define the path to load the data
 path = os.path.abspath(os.path.join("data/Optitrack_Data/Preprocessed_data/" + subject_name + "_c3d/"))
@@ -34,60 +35,49 @@ markers_c3d = load_c3d_innings(path)
 
 for Innings in markers_c3d:
     inning_name = Innings
-
-    markers = markers_c3d[Innings]
-
-    """
-    1) Determine ball pickups
-    """
-
-    ball_pickups = ball_pickup_indexs('VU_Baseball_R_RUS', 'VU_Baseball_R_RRS', 'VU_Baseball_R_RMHE', 'VU_Baseball_R_RLHE', markers)
-    markers_cut_unfiltered = cut_markers(markers,ball_pickups)  # Outputs dictionary of dictionaries contatining individual pitches, length = ballpickups + 1
+    Inning_markers = markers_c3d[Innings]
 
     """
-    2) smoothing the signal
-    This part smooth the signal with the Savgol filter by the least squares method
-    With the function visual_check_smoothing_effect you can investigate its effect compared to the raw signal
+    1) cut and trim signal
     """
-    markersFilter = copy.deepcopy(markers)
-    for key in markers.keys():
-        markersFilter[key]['X'] = savgol_filter(markers[key]['X'], window_length, poly_order)
-        markersFilter[key]['Y'] = savgol_filter(markers[key]['Y'], window_length, poly_order)
-        markersFilter[key]['Z'] = savgol_filter(markers[key]['Z'], window_length, poly_order)
 
-    markerName = 'VU_Baseball_R_RRS'
-    coordinateName = 'Y'
+    ball_pickups = ball_pickup_indexs('VU_Baseball_R_RUS', 'VU_Baseball_R_RRS', 'VU_Baseball_R_RMHE', 'VU_Baseball_R_RLHE', Inning_markers)
+    markers_cut_unfiltered = cut_markers(Inning_markers,ball_pickups)  # Outputs dictionary of dictionaries contatining individual pitches, length = ballpickups + 1
+    markers_trimmed_unfiltered = trim_markers(markers_cut_unfiltered, fs, lead = .2, lag = .4)
 
     """
-    3.1) Save the unfiltered inning data in binary form 
+    2) filter the signal
+    This part smooth the signal with the Butterworth filter
+    """
+
+    Filtered_pitches = butter_lowpass_filter_inning(markers_trimmed_unfiltered, cutoff, fs, order)
+
+    visual_check_smoothing_effect('VU_Baseball_R_C7', 'X', markers_trimmed_unfiltered['pitch_1'], Filtered_pitches['pitch_1'])
+
+    """
+    3.1) Save the unfiltered inning data
     """
     # Path where the pickle will be saved. Last part will be the name of the file
     filename = 'data/Innings/Unfiltered/'+ subject_name + '/' + inning_name
-
     # Initialize the pickle file
     outfile = open(filename, 'wb')
-
     # Write the dictionary into the binary file
-    pickle.dump(markers, outfile)
+    pickle.dump(Inning_markers, outfile)
     outfile.close()
-
     print('Filtered dictionary has been saved.')
 
     """
-    3.2) Save the filtered inning data in binary form 
+    3.2) Save the filtered pitch data
     """
+
     # Path where the pickle will be saved. Last part will be the name of the file
-    filename = 'data/Innings/Filtered/'+ subject_name + '/' + inning_name
-
+    filename = 'data/Pitches/Filtered/'+ subject_name + '/' + inning_name
     # Initialize the pickle file
     outfile = open(filename, 'wb')
-
     # Write the dictionary into the binary file
-    pickle.dump(markersFilter, outfile)
+    pickle.dump(Filtered_pitches, outfile)
     outfile.close()
-
     print('Filtered dictionary has been saved.')
-
 
     """
     3.3) Save unfiltered pitch data
@@ -95,31 +85,25 @@ for Innings in markers_c3d:
 
     # Path where the pickle will be saved. Last part will be the name of the file
     filename = 'data/Pitches/Unfiltered/' + subject_name + '/' + inning_name
-
     # Initialize the pickle jar file
     outfile = open(filename, 'wb')
-
     # Write the dictionary into the binary file
-    pickle.dump(markers_cut_unfiltered, outfile)
+    pickle.dump(markers_trimmed_unfiltered, outfile)
     outfile.close()
-
     print('Unfiltered pitches have been saved.')
 
     """
     3.4) Cut filtered data and save
     """
 
-    markers_cut_filtered = cut_markers(markersFilter,
-                                       ball_pickups)  # Outputs dictionary of dictionaries contatining individual pitches, length = ballpickups + 1
-
+    #markers_cut_filtered = cut_markers(Filtered_inning,ball_pickups)  # Outputs dictionary of dictionaries contatining individual pitches, length = ballpickups + 1
+    #markers_trimmed_filtered = trim_markers(markers_cut_filtered, fs, lead = .2, lag = .4)
+    #visual_check_markers('VU_Baseball_R_RUS', 'VU_Baseball_R_RRS', 'VU_Baseball_R_RMHE', 'VU_Baseball_R_RLHE', markers_trimmed_filtered['pitch_1'])
     # Path where the pickle will be saved. Last part will be the name of the file
-    filename = 'data/Pitches/Filtered/' + subject_name + '/' + inning_name
-
+    #filename = 'data/Pitches/Filtered/' + subject_name + '/' + inning_name
     # Initialize the pickle jar file
-    outfile = open(filename, 'wb')
-
+    #outfile = open(filename, 'wb')
     # Write the dictionary into the binary file
-    pickle.dump(markers_cut_filtered, outfile)
-    outfile.close()
-
-    print('Filtered pitches have been saved as pickle')
+    #pickle.dump(markers_trimmed_filtered, outfile)
+    #outfile.close()
+    #print('Filtered pitches have been saved as pickle')

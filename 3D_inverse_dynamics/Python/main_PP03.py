@@ -19,10 +19,10 @@ Contact E-Mail: a.j.r.leenen@vu.nl
 
 Version 1.5 (2020-07-15)"""
 
-filter_state = 'Filtered'
+filter_state = 'Unfiltered'
 pitcher = 'PP03'
-Inning = 'Inning_2'
-pitch = 'pitch_5'
+Inning = 'Inning_1'
+pitch = 'pitch_2'
 fs = 120
 
 # Selection based on right or left-handed pitchers
@@ -112,14 +112,21 @@ for segment in model:
 
     print('Global net moments of the ' + joints[segment] + ' are projected on the local coordination system of the ' + model[segment]['seg_name'] + '\n')
 
-# Calculate Euler angles
-# elbow_angles = R.from_matrix(R_elbow).as_euler('zxy', degrees=True)
-
 print('Main Finished')
 
-# Visualisation of the global and local net moments
+
+# Calculate Euler angles
+elbow_angles = f.euler_angles('zxy', model['hand']['gRseg'], model['forearm']['gRseg'])
+
 plt.figure(1)
-plt.subplot(211)
+plt.subplot(311)
+plt.plot(elbow_angles[0,:])
+plt.plot(elbow_angles[1,:])
+plt.plot(elbow_angles[2,:])
+
+# Visualisation of the global and local net moments
+
+plt.subplot(312)
 plt.plot(M_joint['forearm']['M_proximal'][0, :], label='Add(+)/Abd(-')
 plt.plot(M_joint['forearm']['M_proximal'][1, :], label='Pro(+)/Sup(-)')
 plt.plot(M_joint['forearm']['M_proximal'][2, :], label='Flex(+)/Ext(-)')
@@ -129,7 +136,7 @@ plt.xlabel('Samples')
 plt.ylabel('Moment [Nm]')
 plt.legend()
 
-plt.subplot(212)
+plt.subplot(313)
 plt.plot(seg_M_joint['forearm'][0, :], label='Add(+)/Abd(-)')
 plt.plot(seg_M_joint['forearm'][1, :], label='Pro(+)/Sup(-)')
 plt.plot(seg_M_joint['forearm'][2, :], label='Flex(+)/Ext(-)')
@@ -139,7 +146,5 @@ plt.xlabel('Samples')
 plt.ylabel('Moment [Nm]')
 plt.legend()
 plt.show()
-
-
 
 
