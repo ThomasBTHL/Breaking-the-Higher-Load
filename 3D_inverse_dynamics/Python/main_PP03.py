@@ -22,7 +22,7 @@ Version 1.5 (2020-07-15)"""
 filter_state = 'Unfiltered'
 pitcher = 'PP03'
 Inning = 'Inning_1'
-pitch = 'pitch_2'
+pitch = 'pitch_1'
 fs = 120
 
 # Selection based on right or left-handed pitchers
@@ -114,19 +114,9 @@ for segment in model:
 
 print('Main Finished')
 
-
-# Calculate Euler angles
-elbow_angles = f.euler_angles('zxy', model['hand']['gRseg'], model['forearm']['gRseg'])
-
-plt.figure(1)
-plt.subplot(311)
-plt.plot(elbow_angles[0,:])
-plt.plot(elbow_angles[1,:])
-plt.plot(elbow_angles[2,:])
-
 # Visualisation of the global and local net moments
 
-plt.subplot(312)
+plt.subplot(211)
 plt.plot(M_joint['forearm']['M_proximal'][0, :], label='Add(+)/Abd(-')
 plt.plot(M_joint['forearm']['M_proximal'][1, :], label='Pro(+)/Sup(-)')
 plt.plot(M_joint['forearm']['M_proximal'][2, :], label='Flex(+)/Ext(-)')
@@ -136,7 +126,7 @@ plt.xlabel('Samples')
 plt.ylabel('Moment [Nm]')
 plt.legend()
 
-plt.subplot(313)
+plt.subplot(212)
 plt.plot(seg_M_joint['forearm'][0, :], label='Add(+)/Abd(-)')
 plt.plot(seg_M_joint['forearm'][1, :], label='Pro(+)/Sup(-)')
 plt.plot(seg_M_joint['forearm'][2, :], label='Flex(+)/Ext(-)')

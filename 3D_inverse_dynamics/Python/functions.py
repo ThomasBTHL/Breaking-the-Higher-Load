@@ -686,7 +686,7 @@ def calc_omega(gRseg, sample_freq):
 """ Functions to define local (anatomical) coordination systems for the required segments """
 
 
-def calc_thorax(IJ, PX, C7, T8, circumference=96, sample_freq=400, gender='male'):
+def calc_thorax(IJ, PX, C7, T8, circumference=96, sample_freq=[], gender='male'):
     """ Calculates the local coordination system of the trunk segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -860,7 +860,7 @@ def calc_thorax(IJ, PX, C7, T8, circumference=96, sample_freq=400, gender='male'
 
     return dictionary
 
-def calc_thorax_without_PX(IJ, C7, T8, circumference=96, sample_freq=400, gender='male'):
+def calc_thorax_without_PX(IJ, C7, T8, circumference=96, sample_freq=[], gender='male'):
     """ Calculates the local coordination system of the trunk segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -1033,7 +1033,7 @@ def calc_thorax_without_PX(IJ, C7, T8, circumference=96, sample_freq=400, gender
     return dictionary
 
 
-def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, gender='male'):
+def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, gender='male'):
     """ Calculates the local coordination system of the pelvis segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -1101,7 +1101,7 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, g
     """Calculations of the hip joint centers"""
 
     # Calculate the depth and width of the pelvis segment
-    pelvis_depth = (((RSIAS + LSIAS) / 2) - SR)
+    pelvis_depth = (origin - SR)
     pelvis_depth_norm = np.array([np.linalg.norm(pelvis_depth[index, :]) for index in range(len(pelvis_depth))])
 
     pelvis_width = RSIAS - LSIAS
@@ -1109,15 +1109,15 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, g
 
     # Calculate the hip joint centers based on pelvis width according Bell (1999) and pelvis depth according to Leardini (1999)
 
-    # Right hip joint center
+    # Right hip joint center (local)
     RHJC = np.array([[-0.31 * pelvis_depth_norm[index],
-                      -0.36 * pelvis_width_norm[index],
-                      -0.30 * pelvis_width_norm[index]] for index in range(len(pelvis_width_norm))])
+                      -0.30 * pelvis_width_norm[index],
+                      0.36 * pelvis_width_norm[index]] for index in range(len(pelvis_width_norm))])
 
     # Left hip joint center
     LHJC = np.array([[-0.31 * pelvis_depth_norm[index],
-                      0.36 * pelvis_width_norm[index],
-                      -0.30 * pelvis_width_norm[index]] for index in range(len(pelvis_width_norm))])
+                      -0.30 * pelvis_width_norm[index],
+                      -0.36 * pelvis_width_norm[index]] for index in range(len(pelvis_width_norm))])
 
     # Initialise dictionary
     JC = dict([])
@@ -1129,10 +1129,10 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, g
     """Conversion of the bony landmarks to the local coordination system of the pelvis"""
 
     # Conversion to local coordination system
-    segMSIAS = np.array([gRseg[index].dot(((LSIAS + RSIAS) / 2)[index])
-                         for index in range(len(pelvis_width_norm))])
+    #segMSIAS = np.array([gRseg[index].dot(((LSIAS + RSIAS) / 2)[index]) for index in range(len(pelvis_width_norm))])
+    segMSIAS = numpy.zeros(numpy.shape(origin))
 
-    segMSIPS = np.array([gRseg[index].dot(((LSIPS + RSIPS) / 2 - (LSIAS + RSIAS) / 2)[index])
+    segMSIPS = np.array([gRseg[index].dot(((LSIPS + RSIPS) / 2 - origin)[index])
                          for index in range(len(pelvis_width_norm))])
 
     # Midpoint hip joint center
@@ -1141,7 +1141,7 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, g
     """Inertial parameters according to the Zatsiorsky regression equations"""
 
     # Inertial parameters are calculated according to the Zatsiorsky regression equations
-    seg_length = np.nanmean(abs(segMSIAS[:, 2] - segMHJC[:, 2]) * 100)  # Conversion from m to cm
+    seg_length = np.nanmean(abs(segMSIAS[:, 1] - segMHJC[:, 1]) * 100)  # Conversion from m to cm
 
     # Initialisation inertial_parameters_sub variable
     inertial_parameters = np.array([])
@@ -1265,7 +1265,7 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, g
 
     return dictionary
 
-def calc_pelvis_without_LASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, gender='male'):
+def calc_pelvis_without_LASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, gender='male'):
     """ Quick and dirty solutions: Makes local coordidnate system without LSIAS, can only be used for the magnitude not for other calculations!
     The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -1497,7 +1497,7 @@ def calc_pelvis_without_LASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circu
 
     return dictionary
 
-def calc_pelvis_without_RASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, gender='male'):
+def calc_pelvis_without_RASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, gender='male'):
     """ Quick and dirty solutions: Makes local coordidnate system without RSIAS, can only be used for the magnitude not for other calculations!
     The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -1730,7 +1730,7 @@ def calc_pelvis_without_RASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circu
     return dictionary
 
 
-def calc_upperarm(LHE, MHE, AC, side='right', sample_freq=400, circumference=29, gender='male'):
+def calc_upperarm(LHE, MHE, AC, side='right', sample_freq=[], circumference=29, gender='male'):
     """ Calculates the local coordination system of the upperarm segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -1772,12 +1772,7 @@ def calc_upperarm(LHE, MHE, AC, side='right', sample_freq=400, circumference=29,
 
     # Calculation of the upper arm segment length
     seg_length_raw = np.nanmean([np.linalg.norm(SJC[index, :] - EJC[index, :]) for index in range(len(EJC))]) * 100  # Conversion from m to cm
-
-    # Calculate correction factor
-    c_factor = 1 - (2 / seg_length_raw)  # Acromion cluster height is 2 cm
-
-    # Calculate corrected segment length of the upper arm
-    seg_length = seg_length_raw * c_factor
+    seg_length = seg_length_raw
 
     """Definition of the ISB coordination system through bony land marks on a right-handed coordination system"""
 
@@ -1836,7 +1831,7 @@ def calc_upperarm(LHE, MHE, AC, side='right', sample_freq=400, circumference=29,
         # Calculate the biomechanical length of the upper arm segment (segment length correction)
         # Acromion to the radius, female: 235.9, male: 244.8 (biomechanical length; measured in 90 degrees abduction position)
         # Shoulder joint center to the elbow joint centers, female: 275.1, male: 281.7 (alternative length)
-        seg_length = seg_length * (244.8 / 281.7)
+        seg_length = seg_length * (244.8 / 281.7) # zat = 244.8, leva =
 
         # Regression parameters for inertial parameters calculations obtained from Zatsiorsky
         reg_parameters = np.transpose([9.67, 10.81, 2.06, 9.71])
@@ -1933,7 +1928,7 @@ def calc_upperarm(LHE, MHE, AC, side='right', sample_freq=400, circumference=29,
     return dictionary
 
 
-def calc_forearm(LHE, MHE, US, RS, side='right', sample_freq=400, circumference=26, gender='male'):
+def calc_forearm(LHE, MHE, US, RS, side='right', sample_freq=[], circumference=26, gender='male'):
     """ Calculates the local coordination system of the forearm segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -2124,7 +2119,7 @@ def calc_forearm(LHE, MHE, US, RS, side='right', sample_freq=400, circumference=
     return dictionary
 
 
-def calc_hand(US, RS, MH3, side='right', sample_freq=400, circumference=21, gender='male'):
+def calc_hand(US, RS, MH3, side='right', sample_freq=[], circumference=21, gender='male'):
     """ Calculates the local coordination system of the hand segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -2320,7 +2315,7 @@ def calc_hand(US, RS, MH3, side='right', sample_freq=400, circumference=21, gend
     return dictionary
 
 
-def calc_tech_system(M1, M2, M3, sample_freq=400):
+def calc_tech_system(M1, M2, M3, sample_freq=[]):
     """ Calculates the local coordination system of a segment or cluster through
     bony land marks on a right-handed coordination system.
 
@@ -2811,7 +2806,7 @@ def moments2segment(gRseg, Mjoint):
     return segMjoint
 
 
-def FC_event(toe_marker, limit=0.3, peak='first', window=25):
+def FC_event(toe_marker, limit=0.3, peak='first', window=25, fs = 120):
     """
     This function calculates the FC_event based on the foot/toe marker.
     FC is determined based on when the acceleration of the toe marker comes below 0.3 m/s.
@@ -2825,7 +2820,7 @@ def FC_event(toe_marker, limit=0.3, peak='first', window=25):
    """
     # Determine the first maximum peak
     toe = np.array(toe_marker)  # toe marker
-    v_toe = calc_derivative(toe, 400)  # velocity of the toe marker
+    v_toe = calc_derivative(toe, fs)  # velocity of the toe marker
     vtoe_max = np.nanmax(v_toe[:, 1])  # take the max of the velocity of the toe marker in y-direction
     index_vtoe_max = int(np.array(np.where(v_toe[:, 1] == vtoe_max)))  # select index max v_toe happens
 
@@ -2943,6 +2938,7 @@ def butter_lowpass_filter_inning(marker_innings, cutoff, fs, order):
 def euler_angles(decomposition_order, gRseg, gRref = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]):
     # import scipy
     # from scipy.spatial.transform import Rotation as R
+    # BUG: Needs to have NAN when data isnt available, currently defaults to 0
 
     # Use global coordinate system as reference coordination system in case of gRref or absence of an input
     if gRref == [[1, 0, 0], [0, 1, 0], [0, 0, 1]]:
@@ -3188,10 +3184,10 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
     plt.xlabel('samples')
     plt.legend()
 
-
     fig.add_subplot(313)
-    plt.plot(numpy.linalg.norm(markers['VU_Baseball_R_C7'],axis = 1))
-    plt.title('Norm of C7')
+    plt.plot(np.gradient(np.array(markers['VU_Baseball_R_C7']['Y'])))
+    plt.title('Gradient of C7')
+
 
     tuples = plt.ginput(15,-1,show_clicks= True, mouse_add=1, mouse_pop=3, mouse_stop=2)
     for i in range(len(tuples)):
@@ -3251,11 +3247,11 @@ def trim_markers(markers, fs = 120, lead = .2, lag = .8):
     for pitch in pitches_trimmed:
         # order: C7-int-cut-filt
         ## select C7 marker to define a window at which to cut the data
-        backmark = np.array(pitches_trimmed[pitch]['VU_Baseball_R_C7'])
-        knip = calc_derivative(backmark, fs) # take derivative of C7
-        knip_max = np.nanmax(knip[:,1])     # take the max of the derivative of C7 in the y-direction
-        index_cut = index_offset + int(np.array(np.where(knip[:,1] == knip_max)))  # select the index this event happens
-        print(index_cut)
+        backmark = np.array(pitches_trimmed[pitch]['VU_Baseball_R_C7']['Y'])
+        knip = (np.gradient(backmark)) # take 1st derivative of C7
+        knip_max = np.nanmax((knip))    # take the max of the 2nd derivative of C7 in the y-direction
+        index_cut = index_offset + int(np.array(np.where(knip == knip_max)))  # select the index this event happens
+
         # improve the data by removing * elements
         keys = list(pitches_trimmed[pitch].keys())  # all the elements
         for j in range(len(pitches_trimmed[pitch])):
@@ -3266,7 +3262,7 @@ def trim_markers(markers, fs = 120, lead = .2, lag = .8):
 
         # initialize dictionaries
         pitch_int = copy.deepcopy(pitches_trimmed[pitch])
-        print(pitch_int['VU_Baseball_R_C7'])
+
         pitch_in = dict()
         keys_new = list(pitch_int.keys())   # all elements in the new marker data set
 
@@ -3278,3 +3274,23 @@ def trim_markers(markers, fs = 120, lead = .2, lag = .8):
         pitches_trimmed[pitch] = pitch_in
         index_offset = index_offset + len(markers[pitch]['VU_Baseball_R_C7'])
     return pitches_trimmed
+
+def orient_markers(markers):
+    """Orients marker data to follow Bart's previous work
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-14)
+
+       Arguments:
+           markers: Marker dictionary
+       Returns:
+           oriented_markers : dictionary contatining dictionarys of each individual pitch oriented to new axis
+       """
+    oriented_markers = copy.deepcopy(markers)
+    for marker in markers:
+        oriented_markers[marker]['X'] = [markers[marker]['X'][index] * -1 for index in range(len(markers[marker]['X']))]
+        oriented_markers[marker]['Y'] = [markers[marker]['Z'][index]  for index in range(len(markers[marker]['X']))]
+        oriented_markers[marker]['Z'] = [markers[marker]['Y'][index]  for index in range(len(markers[marker]['X']))]
+    return oriented_markers

@@ -35,7 +35,16 @@ markers_c3d = load_c3d_innings(path)
 
 for Innings in markers_c3d:
     inning_name = Innings
-    Inning_markers = markers_c3d[Innings]
+    raw_markers = markers_c3d[Innings]
+
+    """
+    0)  Orient data set:
+        col 1 'X' should be to the right 
+        col 2 'Y' should point forwards
+        col 3 'Z' should point up
+    """
+
+    Inning_markers = orient_markers(raw_markers)
 
     """
     1) cut and trim signal
@@ -43,7 +52,7 @@ for Innings in markers_c3d:
 
     ball_pickups = ball_pickup_indexs('VU_Baseball_R_RUS', 'VU_Baseball_R_RRS', 'VU_Baseball_R_RMHE', 'VU_Baseball_R_RLHE', Inning_markers)
     markers_cut_unfiltered = cut_markers(Inning_markers,ball_pickups)  # Outputs dictionary of dictionaries contatining individual pitches, length = ballpickups + 1
-    markers_trimmed_unfiltered = trim_markers(markers_cut_unfiltered, fs, lead = .2, lag = .4)
+    markers_trimmed_unfiltered = trim_markers(markers_cut_unfiltered, fs, lead = .6, lag = .8)
 
     """
     2) filter the signal
