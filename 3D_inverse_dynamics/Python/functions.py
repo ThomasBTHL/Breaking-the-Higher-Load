@@ -754,7 +754,8 @@ def calc_thorax(IJ, PX, C7, T8, circumference=96, sample_freq=[], gender='male')
     """Inertial parameters according to the Zatsiorsky regression equations"""
 
     # Inertial parameters are calculated according to the Zatsiorsky regression equations
-    seg_length = np.nanmean(abs(PX[:, 2] - C7[:, 2]) * 100)  # Conversion from m to cm
+    #seg_length = np.nanmean(abs(PX[:, 2] - C7[:, 2]) * 100)  # Conversion from m to cm #GLOBAL
+    seg_length = np.mean([np.linalg.norm(PX[index,:] - C7[index,:]) for index in range(len(PX))]) * 100 # Conversion from m to cm (local) <-- check this
 
     # Initialisation inertial_parameters_sub variable
     inertial_parameters = np.array([])
@@ -1076,7 +1077,7 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, ge
     QTP = np.cross((SR - origin), (LSIAS - origin))  # Quasi transversal plane
 
     # Transversal axis pointing to the right (first axis)
-    z_axis = LSIAS - RSIAS  # Convert from numpy array to dataframe to reset header names
+    z_axis = RSIAS - LSIAS  # Convert from numpy array to dataframe to reset header names
     z_axis_norm = np.array([z_axis[index, :] / np.linalg.norm(z_axis[index, :]) for index in range(len(z_axis))])
 
     # Sagittal axis pointing forwards (second axis)
@@ -1132,7 +1133,7 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, ge
     #segMSIAS = np.array([gRseg[index].dot(((LSIAS + RSIAS) / 2)[index]) for index in range(len(pelvis_width_norm))])
     segMSIAS = numpy.zeros(numpy.shape(origin))
 
-    segMSIPS = np.array([gRseg[index].dot(((LSIPS + RSIPS) / 2 - origin)[index])
+    segMSIPS = np.array([numpy.linalg.inv(gRseg)[index].dot(((LSIPS + RSIPS) / 2 - origin)[index])
                          for index in range(len(pelvis_width_norm))])
 
     # Midpoint hip joint center
@@ -2884,16 +2885,18 @@ def MER_event(model):
     R_thorax = model['thorax']['gRseg']
 
     # Euler angles humerus relative to the thorax = shoulder external rotation
-    GH = euler_angles('yxy', R_upperarm, R_thorax)
+    GH = euler_angles('zyx', R_upperarm, R_thorax)
     SER = GH[2,:]  # Select the rotation of the humerus relative to the thorax in the z-direction
 
     # Calculate the maximum shoulder external rotation without taking the nans into account
     MER= np.nanmax(SER)
+    if (abs(MER) > 0):
+        # Determine the sample where MER occurs of SER
+        indexMER = int(np.array(np.where(SER==MER)))
 
-    # Determine the sample where MER occurs of SER
-    indexMER = int(np.array(np.where(SER==MER)))
-
-    return MER, indexMER
+        return MER, indexMER
+    else:
+        return float('NaN'), float('NaN')
 
 
 def butter_lowpass_filter(data, cutoff, fs, order):
@@ -3167,6 +3170,7 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
     if m4:
         plt.plot(markers[m4][coordinate3], label=m4)
     plt.title(coordinate3 + ' coordinate of Lower Arm')
+    plt.xlim(0,len(markers[m3][coordinate3]))
     plt.ylabel('position in [mm]')
     plt.legend()
 
@@ -3180,6 +3184,7 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
     if m4:
         plt.plot(markers[m4][coordinate2], label=m4)
     plt.title(coordinate2 + ' coordinate of Lower Arm')
+    plt.xlim(0,len(markers[m3][coordinate3]))
     plt.ylabel('position in [mm]')
     plt.xlabel('samples')
     plt.legend()
@@ -3187,7 +3192,7 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
     fig.add_subplot(313)
     plt.plot(np.gradient(np.array(markers['VU_Baseball_R_C7']['Y'])))
     plt.title('Gradient of C7')
-
+    plt.xlim(0,len(markers[m3][coordinate3]))
 
     tuples = plt.ginput(15,-1,show_clicks= True, mouse_add=1, mouse_pop=3, mouse_stop=2)
     for i in range(len(tuples)):
@@ -3294,3 +3299,94 @@ def orient_markers(markers):
         oriented_markers[marker]['Y'] = [markers[marker]['Z'][index]  for index in range(len(markers[marker]['X']))]
         oriented_markers[marker]['Z'] = [markers[marker]['Y'][index]  for index in range(len(markers[marker]['X']))]
     return oriented_markers
+
+def plot_inning_segment_moments(seg_M_joint,pitch_number,figure_number = 1):
+    """Plots the moments of all pitches in an inning for a given segment name on the segment local frame
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-24)
+
+       Arguments:
+           seg_M_joint: Marker dictionary
+       """
+    seg_M_joint_norm = [np.linalg.norm(seg_M_joint['forearm'][:, index]) for index in range(len(seg_M_joint['forearm'][0,:]))]
+
+
+    plt.figure(figure_number)
+    plt.subplot(411)
+    plt.plot(seg_M_joint['forearm'][0, :], label=pitch_number)
+
+    # plt.plot(normMoment, label='Norm')
+    plt.title('Moments Projected on Forearm Coordination System : Add(+)/Abd(-)')
+    plt.ylabel('Moment [Nm]')
+    plt.legend()
+
+    plt.subplot(412)
+    plt.title('Moments Projected on Forearm Coordination System : Pro(+)/Sup(-)')
+    plt.plot(seg_M_joint['forearm'][1, :], label=pitch_number)
+    plt.ylabel('Moment [Nm]')
+
+    plt.subplot(413)
+    plt.title('Moments Projected on Forearm Coordination System : Flex(+)/Ext(-)')
+    plt.plot(seg_M_joint['forearm'][2, :], label=pitch_number)
+    plt.xlabel('Samples')
+    plt.ylabel('Moment [Nm]')
+
+    plt.subplot(414)
+    plt.title('Norm of Moments Projected on Forearm Coordination System')
+    plt.plot(seg_M_joint_norm, label=pitch_number)
+    plt.xlabel('Samples')
+    plt.ylabel('Moment [Nm]')
+
+def time_sync_moment_data(data, lag):
+    """Time syncs model segments by time delay "lag"
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-24)
+
+       Arguments:
+           data: Segment model of single pitch event
+           lag: amount of lag to add to model
+
+       Returns:
+           synced_model: Segment model of same size, with laged data
+       """
+    synced_data = copy.deepcopy(data)
+    for segment in data:
+        synced_data[segment] = np.array([[data[segment][axis][index + lag] for index in range(len(data[segment][0]))]for axis in range(len(data['forearm']))])
+        if lag < 0:
+            for axis in range(len(data['forearm'])):
+                for i in range(0, (-1 * lag)):
+                    synced_data[segment][axis][i] = 'NaN'
+
+    return synced_data
+
+def time_sync_force_data(data, lag):
+    """Time syncs model segments by time delay "lag"
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-24)
+
+       Arguments:
+           data: Segment model of single pitch event
+           lag: amount of lag to add to model
+
+       Returns:
+           synced_model: Segment model of same size, with laged data
+       """
+    synced_data = copy.deepcopy(data)
+    for segment in data:
+        for location in data[segment]:
+            synced_data[segment][location] = np.array([[data[segment][location][axis][index + lag] for index in range(len(data[segment][location][0]))]for axis in range(len(data['forearm']['F_proximal']))])
+            if lag < 0:
+                for axis in range(len(data['forearm'])):
+                    for i in range(0, (-1 * lag)):
+                        synced_data[segment][location][axis][i] = 'NaN'
+
+    return synced_data
