@@ -23,7 +23,7 @@ Contact E-Mail: a.j.r.leenen@vu.nl
 Version 1.5 (2020-07-15)"""
 
 filter_state = 'Unfiltered'
-pitcher = 'PP05'
+pitcher = 'PP08'
 Inning = 'Inning_1'
 fs = 120
 
@@ -77,29 +77,50 @@ for pitch_number in inning_data:
     # Calculate the net moments according the newton-euler method
     M_joint = f.calc_net_reaction_moment(model, F_joint)
 
-    # Project the calculated net moments according the newton-euler method to local coordination system to be anatomically meaningful
-    joints = {'hand': 'wrist', 'forearm': 'elbow', 'upperarm': 'shoulder', 'thorax': 'spine', 'pelvis': 'hip'}  # Joints used to calculate the net moments according the newton-euler method
+    if (np.isnan(np.nanmean(M_joint['hand']['M_proximal'])) == False) and (
+            np.isnan(np.nanmean(M_joint['forearm']['M_proximal'])) == False) and (
+            np.isnan(np.nanmean(M_joint['upperarm']['M_proximal'])) == False) and (
+            np.isnan(np.nanmean(M_joint['thorax']['M_proximal'])) == False) and (
+            np.isnan(np.nanmean(M_joint['pelvis']['M_proximal'])) == False):
 
-    # Initialise parameters
-    seg_M_joint = dict()
-    for segment in model:
-        seg_M_joint[segment] = f.moments2segment(model[segment]['gRseg'], M_joint[segment]['M_proximal'])
+        # Project the calculated net moments according the newton-euler method to local coordination system to be anatomically meaningful
+        joints = {'hand': 'wrist', 'forearm': 'elbow', 'upperarm': 'shoulder', 'thorax': 'spine', 'pelvis': 'hip'}  # Joints used to calculate the net moments according the newton-euler method
 
-        if side == 'left':
-            seg_M_joint[segment][0:2, :] = -seg_M_joint[segment][0:2, :]
+        # Initialise parameters
+        seg_M_joint = dict()
+        for segment in model:
+            seg_M_joint[segment] = f.moments2segment(model[segment]['gRseg'], M_joint[segment]['M_proximal'])
 
-    # Determine MER index
-    [pitch_MER, pitch_index_MER] = f.MER_event(model)
-    Inning_MER_events.append(pitch_index_MER)
+            if side == 'left':
+                seg_M_joint[segment][0:2, :] = -seg_M_joint[segment][0:2, :]
 
-    # Visualisation of the global and local net moments
-    synced_seg_M_joint = f.time_sync_moment_data(seg_M_joint, pitch_index_MER - Inning_MER_events[0])
-    Inning_seg_M_joint[pitch_number] = synced_seg_M_joint
+        if (np.isnan(np.nanmean(M_joint['hand']['M_proximal'])) == False) and (
+                np.isnan(np.nanmean(M_joint['forearm']['M_proximal'])) == False) and (
+                np.isnan(np.nanmean(M_joint['upperarm']['M_proximal'])) == False) and (
+                np.isnan(np.nanmean(M_joint['thorax']['M_proximal'])) == False) and (
+                np.isnan(np.nanmean(M_joint['pelvis']['M_proximal'])) == False):
 
-    synced_seg_F_joint = f.time_sync_force_data(F_joint, pitch_index_MER - Inning_MER_events[0])
-    Inning_F_joint[pitch_number] = synced_seg_F_joint
+            # Determine MER index
+            [pitch_MER, pitch_index_MER] = f.MER_event(model)
+            Inning_MER_events.append(pitch_index_MER)
 
-    # Visualisation of the global and local net moments
-    f.plot_inning_segment_moments(synced_seg_M_joint,pitch_number,figure_number = 1)
+            # Visualisation of the global and local net moments
+            synced_seg_M_joint = f.time_sync_moment_data(seg_M_joint, pitch_index_MER - Inning_MER_events[0])
+            Inning_seg_M_joint[pitch_number] = synced_seg_M_joint
+
+            synced_seg_F_joint = f.time_sync_force_data(F_joint, pitch_index_MER - Inning_MER_events[0])
+            Inning_F_joint[pitch_number] = synced_seg_F_joint
+
+            # Visualisation of the global and local net moments
+            f.plot_inning_segment_moments(synced_seg_M_joint,pitch_number,figure_number = 2)
+#            f.plot_inning_segment_moments(seg_M_joint,pitch_number,figure_number = 1)
+
+print(Inning_MER_events)
+
+Inning_mean_seg_M_joint, Inning_var_seg_M_joint, Inning_mean_pos_var_seg_M_joint, Inning_mean_neg_var_seg_M_joint = f.calc_variability_seg_M_joint(Inning_seg_M_joint)
+
+f.plot_inning_segment_moments(Inning_mean_seg_M_joint, 'mean', figure_number=3)
+f.plot_inning_segment_moments(Inning_mean_pos_var_seg_M_joint, 'pos_var', figure_number=3)
+f.plot_inning_segment_moments(Inning_mean_neg_var_seg_M_joint, 'neg_var', figure_number=3)
 
 plt.show()

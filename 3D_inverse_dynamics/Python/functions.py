@@ -755,7 +755,7 @@ def calc_thorax(IJ, PX, C7, T8, circumference=96, sample_freq=[], gender='male')
 
     # Inertial parameters are calculated according to the Zatsiorsky regression equations
     #seg_length = np.nanmean(abs(PX[:, 2] - C7[:, 2]) * 100)  # Conversion from m to cm #GLOBAL
-    seg_length = np.mean([np.linalg.norm(PX[index,:] - C7[index,:]) for index in range(len(PX))]) * 100 # Conversion from m to cm (local) <-- check this
+    seg_length = np.nanmean([np.linalg.norm(PX[index,:] - C7[index,:]) for index in range(len(PX))]) * 100 # Conversion from m to cm (local) <-- check this
 
     # Initialisation inertial_parameters_sub variable
     inertial_parameters = np.array([])
@@ -2885,7 +2885,7 @@ def MER_event(model):
     R_thorax = model['thorax']['gRseg']
 
     # Euler angles humerus relative to the thorax = shoulder external rotation
-    GH = euler_angles('zyx', R_upperarm, R_thorax)
+    GH = euler_angles('xyz', R_upperarm, R_thorax)
     SER = GH[2,:]  # Select the rotation of the humerus relative to the thorax in the z-direction
 
     # Calculate the maximum shoulder external rotation without taking the nans into account
@@ -3357,7 +3357,7 @@ def time_sync_moment_data(data, lag):
        """
     synced_data = copy.deepcopy(data)
     for segment in data:
-        synced_data[segment] = np.array([[data[segment][axis][index + lag] for index in range(len(data[segment][0]))]for axis in range(len(data['forearm']))])
+        synced_data[segment] = np.array([[data[segment][axis][index + lag] for index in range(len(data[segment][0]) - lag)]for axis in range(len(data['forearm']))])
         if lag < 0:
             for axis in range(len(data['forearm'])):
                 for i in range(0, (-1 * lag)):
@@ -3383,10 +3383,57 @@ def time_sync_force_data(data, lag):
     synced_data = copy.deepcopy(data)
     for segment in data:
         for location in data[segment]:
-            synced_data[segment][location] = np.array([[data[segment][location][axis][index + lag] for index in range(len(data[segment][location][0]))]for axis in range(len(data['forearm']['F_proximal']))])
+            synced_data[segment][location] = np.array([[data[segment][location][axis][index + lag] for index in range(len(data[segment][location][0]) - lag)]for axis in range(len(data['forearm']['F_proximal']))])
             if lag < 0:
                 for axis in range(len(data['forearm'])):
                     for i in range(0, (-1 * lag)):
                         synced_data[segment][location][axis][i] = 'NaN'
 
     return synced_data
+
+def calc_variability_seg_M_joint(Inning_seg_M_joint):
+    """calculates mean and variability of an inning of pitches
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-25)
+
+       Arguments:
+            Inning_seg_M_joint: Moment data of all segments in an inning
+            Inning_MER_events: List of MER events, only used to find shortest pitch
+       Returns:
+           Inning_mean_seg_M_joint: list of means based on time synced data
+           Inning_var_seg_M_joint: list of variability based on time synced data
+   """
+    pitch_numbers = Inning_seg_M_joint.keys()
+    seg_names = Inning_seg_M_joint['pitch_1'].keys()
+    Inning_mean_seg_M_joint = dict.fromkeys(seg_names)
+    Inning_var_seg_M_joint = dict.fromkeys(seg_names)
+    Inning_mean_pos_var_seg_M_joint = dict.fromkeys(seg_names)
+    Inning_mean_neg_var_seg_M_joint = dict.fromkeys(seg_names)
+
+    for segment in seg_names:
+        # Initiallize lists
+        seg_mean = []
+        seg_var = []
+
+        shortest_pitch = 'pitch_1'
+
+        for pitch in pitch_numbers:
+            if len(Inning_seg_M_joint[pitch]['forearm'][0,:]) < len(Inning_seg_M_joint[shortest_pitch]['forearm'][0,:]):
+                shortest_pitch = pitch
+
+        for index in range(len(Inning_seg_M_joint[shortest_pitch]['forearm'][1])):
+            seg_mean.append(np.nanmean([Inning_seg_M_joint[pitch]['forearm'][:,index] for pitch in Inning_seg_M_joint],0))
+            seg_var.append(np.nanvar([Inning_seg_M_joint[pitch]['forearm'][:,index] for pitch in Inning_seg_M_joint],0))
+
+        seg_mean = np.transpose(np.array(seg_mean))
+        seg_var = np.transpose(np.array(seg_var))
+
+        Inning_mean_seg_M_joint[segment] = seg_mean
+        Inning_var_seg_M_joint[segment] = seg_var
+        Inning_mean_pos_var_seg_M_joint[segment] = seg_mean + seg_var
+        Inning_mean_neg_var_seg_M_joint[segment] = seg_mean - seg_var
+
+    return Inning_mean_seg_M_joint, Inning_var_seg_M_joint, Inning_mean_pos_var_seg_M_joint, Inning_mean_neg_var_seg_M_joint

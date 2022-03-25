@@ -21,7 +21,7 @@ Logbook:
 Version 1.0 (2022-03-18)
 """
 
-subject_name = "PP05"
+subject_name = "PP08"
 
 # Filter parameters
 cutoff = 25
