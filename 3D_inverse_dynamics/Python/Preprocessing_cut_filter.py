@@ -21,7 +21,7 @@ Logbook:
 Version 1.0 (2022-03-18)
 """
 
-subject_name = "PP08"
+subject_name = "PP04"
 
 # Filter parameters
 cutoff = 25
@@ -32,6 +32,9 @@ order = 4
 path = os.path.abspath(os.path.join("data/Optitrack_Data/Preprocessed_data/" + subject_name + "_c3d/"))
 ## Load the c3d files to xlsx
 markers_c3d = load_c3d_innings(path)
+
+# Initial inning number
+inning_number = 1
 
 for Innings in markers_c3d:
     inning_name = Innings
@@ -51,7 +54,7 @@ for Innings in markers_c3d:
     """
 
     ball_pickups = ball_pickup_indexs('VU_Baseball_R_RUS', 'VU_Baseball_R_RRS', 'VU_Baseball_R_RMHE', 'VU_Baseball_R_RLHE', Inning_markers)
-    markers_cut_unfiltered = cut_markers(Inning_markers,ball_pickups)  # Outputs dictionary of dictionaries contatining individual pitches, length = ballpickups + 1
+    markers_cut_unfiltered = cut_markers(Inning_markers,ball_pickups,inning_number)  # Outputs dictionary of dictionaries contatining individual pitches, length = ballpickups + 1
     markers_trimmed_unfiltered = trim_markers(markers_cut_unfiltered, fs, lead = .6, lag = .8)
 
     """
@@ -61,7 +64,7 @@ for Innings in markers_c3d:
 
     Filtered_pitches = butter_lowpass_filter_inning(markers_trimmed_unfiltered, cutoff, fs, order)
 
-    visual_check_smoothing_effect('VU_Baseball_R_C7', 'X', markers_trimmed_unfiltered['pitch_1'], Filtered_pitches['pitch_1'])
+#    visual_check_smoothing_effect('VU_Baseball_R_C7', 'X', markers_trimmed_unfiltered['pitch_1'], Filtered_pitches['pitch_1'])
 
     """
     3.1) Save the unfiltered inning data
@@ -116,3 +119,4 @@ for Innings in markers_c3d:
     #pickle.dump(markers_trimmed_filtered, outfile)
     #outfile.close()
     #print('Filtered pitches have been saved as pickle')
+    inning_number = inning_number + 1

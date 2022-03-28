@@ -21,11 +21,14 @@ Contact E-Mail: a.j.r.leenen@vu.nl
 "" Changes made by Thomas van Hogerwou, Master student TU Delft: Thom.hogerwou@gmail.com
 
 Version 1.5 (2020-07-15)"""
-
+"""
+Input area
+"""
 filter_state = 'Unfiltered'
-pitcher = 'PP08'
-Inning = 'Inning_1'
+pitcher = 'PP04'
+Inning = 'Inning_8'
 fs = 120
+problem_pitches = [11, 15, 16]
 
 # Selection based on right or left-handed pitchers
 if pitcher == ('PP09' or 'PP10' or 'PP11' or 'PP13'):
@@ -33,17 +36,31 @@ if pitcher == ('PP09' or 'PP10' or 'PP11' or 'PP13'):
 else:
     side = 'right'
 
+"""
+Code, shouldnt need any customizing
+"""
 # Path where the pitching dictionary is saved
 filename = 'data' + '/' + 'Pitches' + '/' + filter_state + '/' + pitcher + '/' + Inning
 
 # Read the dictionary as a new variable
 infile = open(filename, 'rb')
-inning_data = pickle.load(infile)
+inning_data_raw = pickle.load(infile)
 infile.close()
+inning_data = copy.deepcopy(inning_data_raw)
 
+# remove unwanted problem pitches
+pitches_to_remove = []
+for i in range(len(problem_pitches)):
+    pitches_to_remove.append("pitch_{0}".format(problem_pitches[i]))
+
+for pitch in inning_data_raw:
+    if pitch in pitches_to_remove:
+        inning_data.pop(pitch)
+
+# Initialize variables
 Inning_MER_events = []
-Inning_seg_M_joint = dict.fromkeys(inning_data.keys())
-Inning_F_joint = dict.fromkeys(inning_data.keys())
+Inning_seg_M_joint = dict()
+Inning_F_joint = dict()
 
 for pitch_number in inning_data:
     # Subdivide dictionary into separate variables
@@ -91,28 +108,22 @@ for pitch_number in inning_data:
         for segment in model:
             seg_M_joint[segment] = f.moments2segment(model[segment]['gRseg'], M_joint[segment]['M_proximal'])
 
-            if side == 'left':
-                seg_M_joint[segment][0:2, :] = -seg_M_joint[segment][0:2, :]
+        if side == 'left':
+            seg_M_joint[segment][0:2, :] = -seg_M_joint[segment][0:2, :]
 
-        if (np.isnan(np.nanmean(M_joint['hand']['M_proximal'])) == False) and (
-                np.isnan(np.nanmean(M_joint['forearm']['M_proximal'])) == False) and (
-                np.isnan(np.nanmean(M_joint['upperarm']['M_proximal'])) == False) and (
-                np.isnan(np.nanmean(M_joint['thorax']['M_proximal'])) == False) and (
-                np.isnan(np.nanmean(M_joint['pelvis']['M_proximal'])) == False):
+        # Determine MER index
+        [pitch_MER, pitch_index_MER] = f.MER_event(model)
+        Inning_MER_events.append(pitch_index_MER)
 
-            # Determine MER index
-            [pitch_MER, pitch_index_MER] = f.MER_event(model)
-            Inning_MER_events.append(pitch_index_MER)
+        # Visualisation of the global and local net moments
+        synced_seg_M_joint = f.time_sync_moment_data(seg_M_joint, pitch_index_MER - Inning_MER_events[0])
+        Inning_seg_M_joint[pitch_number] = synced_seg_M_joint
 
-            # Visualisation of the global and local net moments
-            synced_seg_M_joint = f.time_sync_moment_data(seg_M_joint, pitch_index_MER - Inning_MER_events[0])
-            Inning_seg_M_joint[pitch_number] = synced_seg_M_joint
+        synced_seg_F_joint = f.time_sync_force_data(F_joint, pitch_index_MER - Inning_MER_events[0])
+        Inning_F_joint[pitch_number] = synced_seg_F_joint
 
-            synced_seg_F_joint = f.time_sync_force_data(F_joint, pitch_index_MER - Inning_MER_events[0])
-            Inning_F_joint[pitch_number] = synced_seg_F_joint
-
-            # Visualisation of the global and local net moments
-            f.plot_inning_segment_moments(synced_seg_M_joint,pitch_number,figure_number = 2)
+        # Visualisation of the global and local net moments
+        f.plot_inning_segment_moments(synced_seg_M_joint,pitch_number,figure_number = 2)
 #            f.plot_inning_segment_moments(seg_M_joint,pitch_number,figure_number = 1)
 
 print(Inning_MER_events)

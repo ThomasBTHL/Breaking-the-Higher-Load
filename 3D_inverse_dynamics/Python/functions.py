@@ -2885,7 +2885,7 @@ def MER_event(model):
     R_thorax = model['thorax']['gRseg']
 
     # Euler angles humerus relative to the thorax = shoulder external rotation
-    GH = euler_angles('xyz', R_upperarm, R_thorax)
+    GH = euler_angles('xyz', R_upperarm, R_thorax) #zyz
     SER = GH[2,:]  # Select the rotation of the humerus relative to the thorax in the z-direction
 
     # Calculate the maximum shoulder external rotation without taking the nans into account
@@ -3204,7 +3204,7 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
 
     return ball_pickups
 
-def cut_markers(markers=[], ball_pickups=[]):
+def cut_markers(markers=[], ball_pickups=[], inning = []):
     """Cuts marker data at indexs given by ball pickups
 
     Function is developed and written by Thomas van Hogerwou, master student TU-Delft
@@ -3220,13 +3220,14 @@ def cut_markers(markers=[], ball_pickups=[]):
     """
     markers_cut = {}
 
+
     for i in range(len(ball_pickups)-1):
-        markers_cut["pitch_{0}".format(i+1)] = markers.copy()
+        markers_cut["pitch_{0}".format((10*(inning-1)) + i+1)] = markers.copy()
 
     i = 0
 
     for pitch in markers_cut:
-        for marker in markers_cut["pitch_1"]:
+        for marker in markers_cut[pitch]:
             markers_cut[pitch][marker] = markers_cut[pitch][marker].iloc[ball_pickups[i]:ball_pickups[i+1]]
         i = i + 1
     return markers_cut
@@ -3317,28 +3318,30 @@ def plot_inning_segment_moments(seg_M_joint,pitch_number,figure_number = 1):
     plt.figure(figure_number)
     plt.subplot(411)
     plt.plot(seg_M_joint['forearm'][0, :], label=pitch_number)
-
-    # plt.plot(normMoment, label='Norm')
     plt.title('Moments Projected on Forearm Coordination System : Add(+)/Abd(-)')
     plt.ylabel('Moment [Nm]')
+    plt.xlim(50,125)
     plt.legend()
 
     plt.subplot(412)
     plt.title('Moments Projected on Forearm Coordination System : Pro(+)/Sup(-)')
     plt.plot(seg_M_joint['forearm'][1, :], label=pitch_number)
     plt.ylabel('Moment [Nm]')
+    plt.xlim(50,125)
 
     plt.subplot(413)
     plt.title('Moments Projected on Forearm Coordination System : Flex(+)/Ext(-)')
     plt.plot(seg_M_joint['forearm'][2, :], label=pitch_number)
     plt.xlabel('Samples')
     plt.ylabel('Moment [Nm]')
+    plt.xlim(50,125)
 
     plt.subplot(414)
     plt.title('Norm of Moments Projected on Forearm Coordination System')
     plt.plot(seg_M_joint_norm, label=pitch_number)
     plt.xlabel('Samples')
     plt.ylabel('Moment [Nm]')
+    plt.xlim(50,125)
 
 def time_sync_moment_data(data, lag):
     """Time syncs model segments by time delay "lag"
@@ -3407,7 +3410,11 @@ def calc_variability_seg_M_joint(Inning_seg_M_joint):
            Inning_var_seg_M_joint: list of variability based on time synced data
    """
     pitch_numbers = Inning_seg_M_joint.keys()
-    seg_names = Inning_seg_M_joint['pitch_1'].keys()
+    for pitch_number in Inning_seg_M_joint:
+        seg_names = Inning_seg_M_joint[pitch_number].keys()
+        shortest_pitch = pitch_number
+        break
+
     Inning_mean_seg_M_joint = dict.fromkeys(seg_names)
     Inning_var_seg_M_joint = dict.fromkeys(seg_names)
     Inning_mean_pos_var_seg_M_joint = dict.fromkeys(seg_names)
@@ -3418,10 +3425,8 @@ def calc_variability_seg_M_joint(Inning_seg_M_joint):
         seg_mean = []
         seg_var = []
 
-        shortest_pitch = 'pitch_1'
-
         for pitch in pitch_numbers:
-            if len(Inning_seg_M_joint[pitch]['forearm'][0,:]) < len(Inning_seg_M_joint[shortest_pitch]['forearm'][0,:]):
+            if len(Inning_seg_M_joint[pitch]['pelvis'][0,:]) < len(Inning_seg_M_joint[shortest_pitch]['pelvis'][0,:]):
                 shortest_pitch = pitch
 
         for index in range(len(Inning_seg_M_joint[shortest_pitch]['forearm'][1])):
