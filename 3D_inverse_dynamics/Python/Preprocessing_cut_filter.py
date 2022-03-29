@@ -2,7 +2,6 @@ from functions import *
 import copy
 import matplotlib
 import pickle
-from scipy.signal import savgol_filter
 """
 This program is part of the preprocessing motion capture data.
 1) Determine ball_pickups and save into markers
@@ -21,7 +20,7 @@ Logbook:
 Version 1.0 (2022-03-18)
 """
 
-subject_name = "PP04"
+subject_name = "PP15"
 
 # Filter parameters
 cutoff = 25

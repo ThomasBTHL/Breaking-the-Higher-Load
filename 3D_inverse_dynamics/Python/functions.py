@@ -655,8 +655,8 @@ def calc_omega(gRseg, sample_freq):
     samples = len(gRseg)
 
     # Initialise avSeg and g_avSeg parameters
-    avSeg = np.zeros([samples, 3])
-    g_avSeg = np.zeros([samples, 3])
+    avSeg = np.zeros([3, samples])
+    g_avSeg = np.zeros([3, samples])
 
     # Convert gRseg to vector notation for numerical derivation
     vector_gRseg = matrix2vector(gRseg)
@@ -668,19 +668,17 @@ def calc_omega(gRseg, sample_freq):
     gRseg_derivative = vector2matrix(vector_gRseg_derivative)
 
     for index in range(samples):
-        # Calculate the skew-symmetric matrix
-        skew_matrix = np.dot(np.linalg.inv(gRseg[index]), gRseg_derivative[index])  # The local angular velocity tensor with zeros on the diagonal
 
-        # Calculate the segment angular velocity
-        av_matrix = (skew_matrix - skew_matrix.transpose()) / 2
+        # Calculate the skew-symmetric matrix
+        skew_matrix = 0.5 * (np.dot(gRseg_derivative[index], np.transpose(gRseg[index])) - np.dot(gRseg[index], np.transpose(gRseg_derivative[index])))  # The global angular velocity tensor with zeros on the diagonal
 
         # Selection of the correct elements of the positive angular velocity
-        avSeg[index, :] = [av_matrix[2, 1], av_matrix[0, 2], av_matrix[1, 0]]
+        g_avSeg[:, index] = [skew_matrix[2, 1], skew_matrix[0, 2], skew_matrix[1, 0]]
 
-        # Convert segment angular velocity to global coordination system
-        g_avSeg[index, :] = np.dot(gRseg[index], avSeg[index, :])
+        # Convert segment angular velocity to local coordination system
+        avSeg[:, index] = np.dot(np.linalg.inv(gRseg[index]), g_avSeg[:, index])
 
-    return np.transpose(g_avSeg), np.transpose(avSeg)
+    return g_avSeg, avSeg
 
 
 """ Functions to define local (anatomical) coordination systems for the required segments """
