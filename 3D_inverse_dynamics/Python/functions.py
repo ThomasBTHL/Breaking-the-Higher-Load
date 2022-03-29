@@ -3192,10 +3192,12 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
     plt.title('Gradient of C7')
     plt.xlim(0,len(markers[m3][coordinate3]))
 
+    # Use ginput to manually select cut points
     tuples = plt.ginput(15,-1,show_clicks= True, mouse_add=1, mouse_pop=3, mouse_stop=2)
     for i in range(len(tuples)):
         ball_pickups.append(np.round(tuples[i][0]))
 
+    # Creat list of cut_points
     ball_pickups.append(len(markers[m1])+1)
 
     ball_pickups = [int(x) for x in ball_pickups]
@@ -3218,12 +3220,13 @@ def cut_markers(markers=[], ball_pickups=[], inning = []):
     """
     markers_cut = {}
 
-
+    # Give new name to each pitch based on inning number
     for i in range(len(ball_pickups)-1):
         markers_cut["pitch_{0}".format((10*(inning-1)) + i+1)] = markers.copy()
 
     i = 0
 
+    # Select only the relevant data to remain in new markers_cut
     for pitch in markers_cut:
         for marker in markers_cut[pitch]:
             markers_cut[pitch][marker] = markers_cut[pitch][marker].iloc[ball_pickups[i]:ball_pickups[i+1]]
@@ -3318,28 +3321,78 @@ def plot_inning_segment_moments(seg_M_joint,pitch_number,figure_number = 1):
     plt.plot(seg_M_joint['forearm'][0, :], label=pitch_number)
     plt.title('Moments Projected on Forearm Coordination System : Add(+)/Abd(-)')
     plt.ylabel('Moment [Nm]')
-    plt.xlim(50,125)
+    plt.xlim(60,120)
     plt.legend()
 
     plt.subplot(412)
     plt.title('Moments Projected on Forearm Coordination System : Pro(+)/Sup(-)')
     plt.plot(seg_M_joint['forearm'][1, :], label=pitch_number)
     plt.ylabel('Moment [Nm]')
-    plt.xlim(50,125)
+    plt.xlim(60,120)
 
     plt.subplot(413)
     plt.title('Moments Projected on Forearm Coordination System : Flex(+)/Ext(-)')
     plt.plot(seg_M_joint['forearm'][2, :], label=pitch_number)
     plt.xlabel('Samples')
     plt.ylabel('Moment [Nm]')
-    plt.xlim(50,125)
+    plt.xlim(60,120)
 
     plt.subplot(414)
     plt.title('Norm of Moments Projected on Forearm Coordination System')
     plt.plot(seg_M_joint_norm, label=pitch_number)
     plt.xlabel('Samples')
     plt.ylabel('Moment [Nm]')
-    plt.xlim(50,125)
+    plt.xlim(60,120)
+
+def plot_inning_mean_moments(time,mean,pos_var,neg_var,figure_number = 1):
+    """Plots the moments of all pitches in an inning for a given segment name on the segment local frame
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-24)
+
+       Arguments:
+           seg_M_joint: Marker dictionary
+       """
+    mean_norm = [np.linalg.norm(mean['forearm'][:, index]) for index in range(len(mean['forearm'][0,:]))]
+    pos_var_norm = [np.linalg.norm(pos_var['forearm'][:, index]) for index in range(len(pos_var['forearm'][0,:]))]
+    neg_var_norm = [np.linalg.norm(neg_var['forearm'][:, index]) for index in range(len(neg_var['forearm'][0,:]))]
+
+    plt.figure(figure_number)
+    plt.subplot(411)
+    plt.plot(time,mean['forearm'][0, :], label='mean')
+    plt.fill_between(time,neg_var['forearm'][0, :],pos_var['forearm'][0, :],alpha=0.5, edgecolor='#CC4F1B', facecolor='#FF9848')
+    plt.title('Moments Projected on Forearm Coordination System : Add(+)/Abd(-)')
+    plt.ylabel('Moment [Nm]')
+    plt.xlabel('Time [s]')
+    plt.xlim(.5,1)
+    plt.legend()
+
+    plt.subplot(412)
+    plt.title('Moments Projected on Forearm Coordination System : Pro(+)/Sup(-)')
+    plt.plot(time,mean['forearm'][1, :], label='mean')
+    plt.fill_between(time,neg_var['forearm'][1, :],pos_var['forearm'][1, :],alpha=0.5, edgecolor='#CC4F1B', facecolor='#FF9848')
+    plt.ylabel('Moment [Nm]')
+    plt.xlabel('Time [s]')
+    plt.xlim(.5,1)
+
+    plt.subplot(413)
+    plt.title('Moments Projected on Forearm Coordination System : Flex(+)/Ext(-)')
+    plt.plot(time,mean['forearm'][2, :], label='mean')
+    plt.fill_between(time,neg_var['forearm'][2, :],pos_var['forearm'][2, :],alpha=0.5, edgecolor='#CC4F1B', facecolor='#FF9848')
+    plt.xlabel('Time [s]')
+    plt.xlim(.5,1)
+    plt.ylabel('Moment [Nm]')
+
+    plt.subplot(414)
+    plt.title('Norm of Moments Projected on Forearm Coordination System')
+    plt.plot(time,mean_norm, label='mean')
+    plt.fill_between(time,neg_var_norm,pos_var_norm,alpha=0.5, edgecolor='#CC4F1B', facecolor='#FF9848')
+    plt.xlabel('Time [s]')
+    plt.ylabel('Moment [Nm]')
+    plt.xlim(.5,1)
+    plt.show()
 
 def time_sync_moment_data(data, lag):
     """Time syncs model segments by time delay "lag"
@@ -3351,10 +3404,11 @@ def time_sync_moment_data(data, lag):
 
        Arguments:
            data: Segment model of single pitch event
-           lag: amount of lag to add to model
+           lag: amount of lag to add to model, indexes seperated from desired
+                ex: [-1 -2 1 0 -1 2]
 
        Returns:
-           synced_model: Segment model of same size, with laged data
+           synced_model: Segment model of same size, with laged data, padded with nans
        """
     synced_data = copy.deepcopy(data)
     for segment in data:
@@ -3362,7 +3416,7 @@ def time_sync_moment_data(data, lag):
         if lag < 0:
             for axis in range(len(data['forearm'])):
                 for i in range(0, (-1 * lag)):
-                    synced_data[segment][axis][i] = 'NaN'
+                    synced_data[segment][axis][i] = 'NaN' # remove the [-i] loop around python does, replace with nans
 
     return synced_data
 
@@ -3388,7 +3442,7 @@ def time_sync_force_data(data, lag):
             if lag < 0:
                 for axis in range(len(data['forearm'])):
                     for i in range(0, (-1 * lag)):
-                        synced_data[segment][location][axis][i] = 'NaN'
+                        synced_data[segment][location][axis][i] = 'NaN' # remove the [-i] loop around python does, replace with nans
 
     return synced_data
 

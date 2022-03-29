@@ -1,6 +1,5 @@
 """Import modules"""
 import copy
-
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 import numpy
@@ -25,10 +24,10 @@ Version 1.5 (2020-07-15)"""
 Input area
 """
 filter_state = 'Unfiltered'
-pitcher = 'PP04'
-Inning = 'Inning_8'
+pitcher = 'PP03'
+Inning = 'Inning_1'
 fs = 120
-problem_pitches = [11, 15, 16]
+problem_pitches = [5, 10]
 
 # Selection based on right or left-handed pitchers
 if pitcher == ('PP09' or 'PP10' or 'PP11' or 'PP13'):
@@ -130,8 +129,9 @@ print(Inning_MER_events)
 
 Inning_mean_seg_M_joint, Inning_var_seg_M_joint, Inning_mean_pos_var_seg_M_joint, Inning_mean_neg_var_seg_M_joint = f.calc_variability_seg_M_joint(Inning_seg_M_joint)
 
-f.plot_inning_segment_moments(Inning_mean_seg_M_joint, 'mean', figure_number=3)
-f.plot_inning_segment_moments(Inning_mean_pos_var_seg_M_joint, 'pos_var', figure_number=3)
-f.plot_inning_segment_moments(Inning_mean_neg_var_seg_M_joint, 'neg_var', figure_number=3)
+#f.plot_inning_segment_moments(Inning_mean_seg_M_joint, 'mean', figure_number=3)
+#f.plot_inning_segment_moments(Inning_mean_pos_var_seg_M_joint, 'pos_var', figure_number=3)
+#f.plot_inning_segment_moments(Inning_mean_neg_var_seg_M_joint, 'neg_var', figure_number=3)
+time = np.linspace(0,len(Inning_mean_neg_var_seg_M_joint['forearm'][0,:])/120,len(Inning_mean_neg_var_seg_M_joint['forearm'][0,:]))
 
-plt.show()
+f.plot_inning_mean_moments(time,Inning_mean_seg_M_joint,Inning_mean_pos_var_seg_M_joint,Inning_mean_neg_var_seg_M_joint,figure_number = 1)
