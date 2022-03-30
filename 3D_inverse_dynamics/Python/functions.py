@@ -1130,9 +1130,8 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, ge
     # Conversion to local coordination system
     #segMSIAS = np.array([gRseg[index].dot(((LSIAS + RSIAS) / 2)[index]) for index in range(len(pelvis_width_norm))])
     segMSIAS = numpy.zeros(numpy.shape(origin))
+    segMSIPS = np.array([numpy.ndarray.transpose(gRseg[index]).dot(((LSIPS + RSIPS) / 2 - origin)[index]) for index in range(len(pelvis_width_norm))])
 
-    segMSIPS = np.array([numpy.linalg.inv(gRseg)[index].dot(((LSIPS + RSIPS) / 2 - origin)[index])
-                         for index in range(len(pelvis_width_norm))])
 
     # Midpoint hip joint center
     segMHJC = np.array((RHJC + LHJC) / 2)

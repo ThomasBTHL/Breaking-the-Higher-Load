@@ -23,6 +23,8 @@ Version 1.5 (2020-07-15)"""
 """
 Input area
 """
+
+length = 'Innings'
 filter_state = 'Unfiltered'
 pitcher = 'PP03'
 Inning = 'Inning_1'
@@ -39,22 +41,26 @@ else:
 Code, shouldnt need any customizing
 """
 # Path where the pitching dictionary is saved
-filename = 'data' + '/' + 'Pitches' + '/' + filter_state + '/' + pitcher + '/' + Inning
+filename = 'data' + '/' + length + '/' + filter_state + '/' + pitcher + '/' + Inning
 
 # Read the dictionary as a new variable
 infile = open(filename, 'rb')
 inning_data_raw = pickle.load(infile)
 infile.close()
-inning_data = copy.deepcopy(inning_data_raw)
 
 # remove unwanted problem pitches
 pitches_to_remove = []
 for i in range(len(problem_pitches)):
     pitches_to_remove.append("pitch_{0}".format(problem_pitches[i]))
 
-for pitch in inning_data_raw:
-    if pitch in pitches_to_remove:
-        inning_data.pop(pitch)
+if len(inning_data_raw) == 14:
+    inning_data = dict()
+    inning_data['whole inning'] = inning_data_raw
+else:
+    inning_data = copy.deepcopy(inning_data_raw)
+    for pitch in inning_data_raw:
+        if pitch in pitches_to_remove:
+            inning_data.pop(pitch)
 
 # Initialize variables
 Inning_MER_events = []
@@ -86,6 +92,16 @@ for pitch_number in inning_data:
 
     # Rearrange model to have the correct order of segments for 'top-down' method
     model = f.rearrange_model(model, 'top-down')
+
+    # Save model as pickle
+    # Path where the pickle will be saved. Last part will be the name of the file
+    filename = 'Models' + '/' + length + '/' + filter_state + '/' + pitcher + '/' + Inning + '/' + pitch_number
+    # Initialize the pickle file
+    outfile = open(filename, 'wb')
+    # Write the dictionary into the binary file
+    pickle.dump(model, outfile)
+    outfile.close()
+    print('model has been saved.')
 
     # Calculate the net forces according the newton-euler method
     F_joint = f.calc_net_reaction_force(model)
@@ -129,9 +145,6 @@ print(Inning_MER_events)
 
 Inning_mean_seg_M_joint, Inning_var_seg_M_joint, Inning_mean_pos_var_seg_M_joint, Inning_mean_neg_var_seg_M_joint = f.calc_variability_seg_M_joint(Inning_seg_M_joint)
 
-#f.plot_inning_segment_moments(Inning_mean_seg_M_joint, 'mean', figure_number=3)
-#f.plot_inning_segment_moments(Inning_mean_pos_var_seg_M_joint, 'pos_var', figure_number=3)
-#f.plot_inning_segment_moments(Inning_mean_neg_var_seg_M_joint, 'neg_var', figure_number=3)
 time = np.linspace(0,len(Inning_mean_neg_var_seg_M_joint['forearm'][0,:])/120,len(Inning_mean_neg_var_seg_M_joint['forearm'][0,:]))
 
 f.plot_inning_mean_moments(time,Inning_mean_seg_M_joint,Inning_mean_pos_var_seg_M_joint,Inning_mean_neg_var_seg_M_joint,figure_number = 1)
