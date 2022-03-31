@@ -1,6 +1,5 @@
 """Import modules"""
 import copy
-import numpy as np
 from scipy.spatial.transform import Rotation as R
 import numpy
 import matplotlib.pyplot as plt
@@ -20,6 +19,7 @@ Contact E-Mail: a.j.r.leenen@vu.nl
 "" Changes made by Thomas van Hogerwou, Master student TU Delft: Thom.hogerwou@gmail.com
 
 Version 1.5 (2020-07-15)"""
+
 """
 Input area
 """
@@ -33,9 +33,11 @@ problem_pitches = [5, 10]
 
 # Selection based on right or left-handed pitchers
 if pitcher == ('PP09' or 'PP10' or 'PP11' or 'PP13'):
+
     side = 'left'
 else:
     side = 'right'
+
 
 """
 Code, shouldnt need any customizing
