@@ -1,4 +1,5 @@
 """Import modules"""
+import numpy.linalg
 import scipy
 from scipy.spatial.transform import Rotation as R
 import scipy.signal as sp
@@ -15,6 +16,7 @@ from tkinter.ttk import *
 from tkinter import *
 import scipy
 from scipy.signal import butter as butter
+from scipy.signal import find_peaks
 import time
 import math
 import copy
@@ -28,6 +30,7 @@ print("Import of Packages Successful!")
 
 """3D inverse dynamic model is developed and written by Ton Leenen, PhD-Candidate Vrije Universiteit Amsterdam
 Contact E-Mail: a.j.r.leenen@vu.nl
+Changes made by Thomas van Hogerwou
 
 Version 1.5 (2020-07-15)"""
 
@@ -225,6 +228,90 @@ def load_c3d(path):
             for markers in tqdm(range(reader.point_used), unit="marker"):
                 # Displays progressbar in console
                 sleep(0.1)
+                pass
+
+                for samples in range(len(data)):
+                    dictionary_nested[labels[markers]].iloc[samples, 0:3] = data[samples][markers,
+                                                                            0:3] / 1000  # Convert the position data directly from millimeter to meter
+
+                # Loop through the markers in dictionary_nested to replace zeros with NaN values
+                dictionary_nested[labels[markers]].replace(0, np.nan, inplace=True)
+
+            # Combine the data from the calibration and measurements in dictionary_nested in dictionary
+            dictionary[names[counter_3]] = dictionary_nested
+
+            # Counter to loop through names to be defined as key in dictionary
+            counter_3 = counter_3 + 1
+
+    print("Finished")
+
+    return dictionary
+
+def load_c3d_innings(path):
+    """Load the position data with .c3d binary files into dictionary.
+
+    Function is developed and written by Ton Leenen, PhD-Candidate Vrije Universiteit Amsterdam & Thomas van Hogerwou, Master student TU-Delft
+    Contact E-Mail: a.j.r.leenen@vu.nl
+
+    Version 1.0 (2020-03-19)
+
+    Arguments:
+        path: path or folder containing position data with .c3d binary files
+    Returns:
+        dictionary: containing (multiple) dataframe(s),
+        samples on the rows and X, Y, Z, on the columns and ordered by marker name (keys)
+    """
+
+    # Initialise counter to append calibration and measurement names
+    counter_1 = 0  # Define counter for calibrations
+    counter_2 = 1  # Define counter for measurements
+    counter_3 = 0  # Define counter for dictionary
+
+    # Initialise names
+    names = []
+
+    for f in sorted_alphanumeric(os.listdir(path)):
+        if f.endswith(".c3d"):
+            # Predefine calibration and measurement names
+            if f.endswith("Static.c3d"):
+                names.append("STATIC_" + str(counter_1))
+                counter_1 = counter_1 + 1
+            else:
+                names.append("Inning_" + str(counter_2))
+                counter_2 = counter_2 + 1
+
+    # Initialise dictionary and nested dictionary
+    dictionary = dict.fromkeys(names, dict())
+
+    # Load position data with .c3d binary files from path or folder
+    for f in sorted_alphanumeric(os.listdir(path)):
+
+        # Initialise variables labels and data
+        labels = []
+        data = []
+
+        # Load the .c3d binary files in the path or folder only
+        if f.endswith(".c3d"):
+            reader = c3d.Reader(open(f'{path}/{f}', 'rb'))
+            print("Loading " + str(f) + " - " + str(path + "/" + f))
+
+            # Predefined markers labels
+            [labels.append(reader.point_labels[index].strip()) for index in range(reader.point_used)]
+
+            # Read the frames containing the position data from the .c3d binary file into a numpy array
+            [data.append(points) for frame, points, analog in reader.read_frames()]
+
+            # Initialise nested dictionary
+            dictionary_nested = dict.fromkeys(labels, pd.DataFrame([]))
+
+            # Initialise pandas dataframes for key in nested dictionary containing ones
+            for markers in range(reader.point_used):
+                dictionary_nested[labels[markers]] = pd.DataFrame(data=np.ones((len(data), 3)), columns=["X", "Y", "Z"])
+
+            # Loop through the markers and frames containing the position data and reorganise and combine the data from the .c3d binary file in the dictionary
+            for markers in tqdm(range(reader.point_used), unit="marker"):
+                # Displays progressbar in console
+                sleep(0.001)
                 pass
 
                 for samples in range(len(data)):
@@ -568,8 +655,8 @@ def calc_omega(gRseg, sample_freq):
     samples = len(gRseg)
 
     # Initialise avSeg and g_avSeg parameters
-    avSeg = np.zeros([samples, 3])
-    g_avSeg = np.zeros([samples, 3])
+    avSeg = np.zeros([3, samples])
+    g_avSeg = np.zeros([3, samples])
 
     # Convert gRseg to vector notation for numerical derivation
     vector_gRseg = matrix2vector(gRseg)
@@ -581,25 +668,23 @@ def calc_omega(gRseg, sample_freq):
     gRseg_derivative = vector2matrix(vector_gRseg_derivative)
 
     for index in range(samples):
-        # Calculate the skew-symmetric matrix
-        skew_matrix = np.dot(np.linalg.inv(gRseg[index]), gRseg_derivative[index])  # The local angular velocity tensor with zeros on the diagonal
 
-        # Calculate the segment angular velocity
-        av_matrix = (skew_matrix - skew_matrix.transpose()) / 2
+        # Calculate the skew-symmetric matrix
+        skew_matrix = 0.5 * (np.dot(gRseg_derivative[index], np.transpose(gRseg[index])) - np.dot(gRseg[index], np.transpose(gRseg_derivative[index])))  # The global angular velocity tensor with zeros on the diagonal
 
         # Selection of the correct elements of the positive angular velocity
-        avSeg[index, :] = [av_matrix[2, 1], av_matrix[0, 2], av_matrix[1, 0]]
+        g_avSeg[:, index] = [skew_matrix[2, 1], skew_matrix[0, 2], skew_matrix[1, 0]]
 
-        # Convert segment angular velocity to global coordination system
-        g_avSeg[index, :] = np.dot(gRseg[index], avSeg[index, :])
+        # Convert segment angular velocity to local coordination system
+        avSeg[:, index] = np.dot(np.linalg.inv(gRseg[index]), g_avSeg[:, index])
 
-    return np.transpose(g_avSeg), np.transpose(avSeg)
+    return g_avSeg, avSeg
 
 
 """ Functions to define local (anatomical) coordination systems for the required segments """
 
 
-def calc_thorax(IJ, PX, C7, T8, circumference=96, sample_freq=400, gender='male'):
+def calc_thorax(IJ, PX, C7, T8, circumference=96, sample_freq=[], gender='male'):
     """ Calculates the local coordination system of the trunk segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -667,7 +752,8 @@ def calc_thorax(IJ, PX, C7, T8, circumference=96, sample_freq=400, gender='male'
     """Inertial parameters according to the Zatsiorsky regression equations"""
 
     # Inertial parameters are calculated according to the Zatsiorsky regression equations
-    seg_length = np.nanmean(abs(PX[:, 2] - C7[:, 2]) * 100)  # Conversion from m to cm
+    #seg_length = np.nanmean(abs(PX[:, 2] - C7[:, 2]) * 100)  # Conversion from m to cm #GLOBAL
+    seg_length = np.nanmean([np.linalg.norm(PX[index,:] - C7[index,:]) for index in range(len(PX))]) * 100 # Conversion from m to cm (local) <-- check this
 
     # Initialisation inertial_parameters_sub variable
     inertial_parameters = np.array([])
@@ -773,7 +859,7 @@ def calc_thorax(IJ, PX, C7, T8, circumference=96, sample_freq=400, gender='male'
 
     return dictionary
 
-def calc_thorax_without_PX(IJ, C7, T8, circumference=96, sample_freq=400, gender='male'):
+def calc_thorax_without_PX(IJ, C7, T8, circumference=96, sample_freq=[], gender='male'):
     """ Calculates the local coordination system of the trunk segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -946,7 +1032,7 @@ def calc_thorax_without_PX(IJ, C7, T8, circumference=96, sample_freq=400, gender
     return dictionary
 
 
-def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, gender='male'):
+def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, gender='male'):
     """ Calculates the local coordination system of the pelvis segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -989,7 +1075,7 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, g
     QTP = np.cross((SR - origin), (LSIAS - origin))  # Quasi transversal plane
 
     # Transversal axis pointing to the right (first axis)
-    z_axis = LSIAS - RSIAS  # Convert from numpy array to dataframe to reset header names
+    z_axis = RSIAS - LSIAS  # Convert from numpy array to dataframe to reset header names
     z_axis_norm = np.array([z_axis[index, :] / np.linalg.norm(z_axis[index, :]) for index in range(len(z_axis))])
 
     # Sagittal axis pointing forwards (second axis)
@@ -1014,7 +1100,7 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, g
     """Calculations of the hip joint centers"""
 
     # Calculate the depth and width of the pelvis segment
-    pelvis_depth = (((RSIAS + LSIAS) / 2) - SR)
+    pelvis_depth = (origin - SR)
     pelvis_depth_norm = np.array([np.linalg.norm(pelvis_depth[index, :]) for index in range(len(pelvis_depth))])
 
     pelvis_width = RSIAS - LSIAS
@@ -1022,15 +1108,15 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, g
 
     # Calculate the hip joint centers based on pelvis width according Bell (1999) and pelvis depth according to Leardini (1999)
 
-    # Right hip joint center
+    # Right hip joint center (local)
     RHJC = np.array([[-0.31 * pelvis_depth_norm[index],
-                      -0.36 * pelvis_width_norm[index],
-                      -0.30 * pelvis_width_norm[index]] for index in range(len(pelvis_width_norm))])
+                      -0.30 * pelvis_width_norm[index],
+                      0.36 * pelvis_width_norm[index]] for index in range(len(pelvis_width_norm))])
 
     # Left hip joint center
     LHJC = np.array([[-0.31 * pelvis_depth_norm[index],
-                      0.36 * pelvis_width_norm[index],
-                      -0.30 * pelvis_width_norm[index]] for index in range(len(pelvis_width_norm))])
+                      -0.30 * pelvis_width_norm[index],
+                      -0.36 * pelvis_width_norm[index]] for index in range(len(pelvis_width_norm))])
 
     # Initialise dictionary
     JC = dict([])
@@ -1042,11 +1128,10 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, g
     """Conversion of the bony landmarks to the local coordination system of the pelvis"""
 
     # Conversion to local coordination system
-    segMSIAS = np.array([gRseg[index].dot(((LSIAS + RSIAS) / 2)[index])
-                         for index in range(len(pelvis_width_norm))])
+    #segMSIAS = np.array([gRseg[index].dot(((LSIAS + RSIAS) / 2)[index]) for index in range(len(pelvis_width_norm))])
+    segMSIAS = numpy.zeros(numpy.shape(origin))
+    segMSIPS = np.array([numpy.ndarray.transpose(gRseg[index]).dot(((LSIPS + RSIPS) / 2 - origin)[index]) for index in range(len(pelvis_width_norm))])
 
-    segMSIPS = np.array([gRseg[index].dot(((LSIPS + RSIPS) / 2 - (LSIAS + RSIAS) / 2)[index])
-                         for index in range(len(pelvis_width_norm))])
 
     # Midpoint hip joint center
     segMHJC = np.array((RHJC + LHJC) / 2)
@@ -1054,7 +1139,7 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, g
     """Inertial parameters according to the Zatsiorsky regression equations"""
 
     # Inertial parameters are calculated according to the Zatsiorsky regression equations
-    seg_length = np.nanmean(abs(segMSIAS[:, 2] - segMHJC[:, 2]) * 100)  # Conversion from mm to cm
+    seg_length = np.nanmean(abs(segMSIAS[:, 1] - segMHJC[:, 1]) * 100)  # Conversion from m to cm
 
     # Initialisation inertial_parameters_sub variable
     inertial_parameters = np.array([])
@@ -1178,7 +1263,7 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, g
 
     return dictionary
 
-def calc_pelvis_without_LASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, gender='male'):
+def calc_pelvis_without_LASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, gender='male'):
     """ Quick and dirty solutions: Makes local coordidnate system without LSIAS, can only be used for the magnitude not for other calculations!
     The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -1410,7 +1495,7 @@ def calc_pelvis_without_LASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circu
 
     return dictionary
 
-def calc_pelvis_without_RASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circumference=97, gender='male'):
+def calc_pelvis_without_RASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, gender='male'):
     """ Quick and dirty solutions: Makes local coordidnate system without RSIAS, can only be used for the magnitude not for other calculations!
     The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -1643,7 +1728,7 @@ def calc_pelvis_without_RASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=400, circu
     return dictionary
 
 
-def calc_upperarm(LHE, MHE, AC, side='right', sample_freq=400, circumference=29, gender='male'):
+def calc_upperarm(LHE, MHE, AC, side='right', sample_freq=[], circumference=29, gender='male'):
     """ Calculates the local coordination system of the upperarm segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -1685,12 +1770,7 @@ def calc_upperarm(LHE, MHE, AC, side='right', sample_freq=400, circumference=29,
 
     # Calculation of the upper arm segment length
     seg_length_raw = np.nanmean([np.linalg.norm(SJC[index, :] - EJC[index, :]) for index in range(len(EJC))]) * 100  # Conversion from m to cm
-
-    # Calculate correction factor
-    c_factor = 1 - (2 / seg_length_raw)  # Acromion cluster height is 2 cm
-
-    # Calculate corrected segment length of the upper arm
-    seg_length = seg_length_raw * c_factor
+    seg_length = seg_length_raw
 
     """Definition of the ISB coordination system through bony land marks on a right-handed coordination system"""
 
@@ -1749,7 +1829,7 @@ def calc_upperarm(LHE, MHE, AC, side='right', sample_freq=400, circumference=29,
         # Calculate the biomechanical length of the upper arm segment (segment length correction)
         # Acromion to the radius, female: 235.9, male: 244.8 (biomechanical length; measured in 90 degrees abduction position)
         # Shoulder joint center to the elbow joint centers, female: 275.1, male: 281.7 (alternative length)
-        seg_length = seg_length * (244.8 / 281.7)
+        seg_length = seg_length * (244.8 / 281.7) # zat = 244.8, leva =
 
         # Regression parameters for inertial parameters calculations obtained from Zatsiorsky
         reg_parameters = np.transpose([9.67, 10.81, 2.06, 9.71])
@@ -1846,7 +1926,7 @@ def calc_upperarm(LHE, MHE, AC, side='right', sample_freq=400, circumference=29,
     return dictionary
 
 
-def calc_forearm(LHE, MHE, US, RS, side='right', sample_freq=400, circumference=26, gender='male'):
+def calc_forearm(LHE, MHE, US, RS, side='right', sample_freq=[], circumference=26, gender='male'):
     """ Calculates the local coordination system of the forearm segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -2037,7 +2117,7 @@ def calc_forearm(LHE, MHE, US, RS, side='right', sample_freq=400, circumference=
     return dictionary
 
 
-def calc_hand(US, RS, MH3, side='right', sample_freq=400, circumference=21, gender='male'):
+def calc_hand(US, RS, MH3, side='right', sample_freq=[], circumference=21, gender='male'):
     """ Calculates the local coordination system of the hand segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -2233,7 +2313,7 @@ def calc_hand(US, RS, MH3, side='right', sample_freq=400, circumference=21, gend
     return dictionary
 
 
-def calc_tech_system(M1, M2, M3, sample_freq=400):
+def calc_tech_system(M1, M2, M3, sample_freq=[]):
     """ Calculates the local coordination system of a segment or cluster through
     bony land marks on a right-handed coordination system.
 
@@ -2724,7 +2804,7 @@ def moments2segment(gRseg, Mjoint):
     return segMjoint
 
 
-def FC_event(toe_marker, limit=0.3, peak='first', window=25):
+def FC_event(toe_marker, limit=0.3, peak='first', window=25, fs = 120):
     """
     This function calculates the FC_event based on the foot/toe marker.
     FC is determined based on when the acceleration of the toe marker comes below 0.3 m/s.
@@ -2738,7 +2818,7 @@ def FC_event(toe_marker, limit=0.3, peak='first', window=25):
    """
     # Determine the first maximum peak
     toe = np.array(toe_marker)  # toe marker
-    v_toe = calc_derivative(toe, 400)  # velocity of the toe marker
+    v_toe = calc_derivative(toe, fs)  # velocity of the toe marker
     vtoe_max = np.nanmax(v_toe[:, 1])  # take the max of the velocity of the toe marker in y-direction
     index_vtoe_max = int(np.array(np.where(v_toe[:, 1] == vtoe_max)))  # select index max v_toe happens
 
@@ -2802,48 +2882,63 @@ def MER_event(model):
     R_thorax = model['thorax']['gRseg']
 
     # Euler angles humerus relative to the thorax = shoulder external rotation
-    GH = euler_angles('yxy', R_upperarm, R_thorax)
+    GH = euler_angles('xyz', R_upperarm, R_thorax) #zyz
     SER = GH[2,:]  # Select the rotation of the humerus relative to the thorax in the z-direction
 
     # Calculate the maximum shoulder external rotation without taking the nans into account
     MER= np.nanmax(SER)
+    if (abs(MER) > 0):
+        # Determine the sample where MER occurs of SER
+        indexMER = int(np.array(np.where(SER==MER)))
 
-    # Determine the sample where MER occurs of SER
-    indexMER = int(np.array(np.where(SER==MER)))
+        return MER, indexMER
+    else:
+        return float('NaN'), float('NaN')
 
-    return MER, indexMER
 
-
-def butter_lowpass_filter(data, cutoff, fs, order=4):
-
+def butter_lowpass_filter(data, cutoff, fs, order):
     # low-pass parameters, using ba
     nyq = 0.5 * fs
     normal_cutoff = cutoff / nyq
     b, a = butter(order, normal_cutoff, btype='low', analog=False)
 
     # filter the data
-    data = data.to_numpy()
     data_out = copy.deepcopy(data)
-    for i in range(np.shape(data)[1]):                           # run over x,y,z separately
-        indices = np.where(np.invert(np.isnan(data[:,i])))[0]    # select the indices where data is not nan (in any value of the 2D array)
-        if len(indices) > 15:   # input for the filter must at least be of length 15 (3*max(len(a),len(b)))
-            y = scipy.signal.filtfilt(b, a, data[indices, i])  # filter the selected indices
-            data_out[indices, i] = y  # replace the data with filtered indices and keep the nan's
-        else:
-            data_out = data
+    indices = np.where(np.invert(np.isnan(data)))[0]    # select the indices where data is not nan (in any value of the 2D array)
 
-    # filter the data
-    # data = data.to_numpy()
-    # data_out = copy.deepcopy(data)
-    # for i in range(np.shape(data)[1]):                           # run over x,y,z separately
-    #     data_out[:,i] = scipy.signal.filtfilt(b, a, data[:,i])       # replace the data with filtered indices and keep the nan's
+    if len(indices) > 15:   # input for the filter must at least be of length 15 (3*max(len(a),len(b)))
+        y = scipy.signal.filtfilt(b, a, data[indices])  # filter the selected indices
+        data_out[indices] = y  # replace the data with filtered indices and keep the nan's
+    else:
+        data_out = data
 
     return data_out
+
+def butter_lowpass_filter_inning(marker_innings, cutoff, fs, order):
+    filtered_inning = copy.deepcopy(marker_innings)
+    for single_pitch in marker_innings:
+        # Interpolate the data and cut the data to the predefined window and apply a low-pass filter
+        # initialize dictionaries
+        pitch_int = copy.deepcopy(marker_innings[single_pitch])
+        pitch = dict()
+        keys_new = list(pitch_int.keys())   # all elements in the new marker data set
+
+        for k in range(len(pitch_int)):
+            key_new = keys_new[k]   # select element name
+
+            # filter the data separately for X,Y,Z
+            pitch[key_new] = pd.DataFrame() # initialize dictionary
+            pitch[key_new]['X'] = butter_lowpass_filter(np.array(pitch_int[key_new]['X']), cutoff, fs, order)
+            pitch[key_new]['Y'] = butter_lowpass_filter(np.array(pitch_int[key_new]['Y']), cutoff, fs, order)
+            pitch[key_new]['Z'] = butter_lowpass_filter(np.array(pitch_int[key_new]['Z']), cutoff, fs, order)
+        filtered_inning[single_pitch] = pitch
+    return filtered_inning
 
 
 def euler_angles(decomposition_order, gRseg, gRref = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]):
     # import scipy
     # from scipy.spatial.transform import Rotation as R
+    # BUG: Needs to have NAN when data isnt available, currently defaults to 0
 
     # Use global coordinate system as reference coordination system in case of gRref or absence of an input
     if gRref == [[1, 0, 0], [0, 1, 0], [0, 0, 1]]:
@@ -2890,7 +2985,6 @@ def visual_check_markers(m1=[], m2=[], m3=[], m4=[], c3dFile=[], title=''):
     plt.title(title + coordinate1 + ' coordinate')
     plt.ylabel('position in [mm]')
     plt.xlabel('samples')
-    plt.show()
     plt.legend()
 
     ax_y = fig.add_subplot(312)
@@ -2905,7 +2999,6 @@ def visual_check_markers(m1=[], m2=[], m3=[], m4=[], c3dFile=[], title=''):
     plt.title(coordinate2 + ' coordinate')
     plt.ylabel('postion in [mm]')
     plt.xlabel('samples')
-    plt.show()
     plt.legend()
 
     ax_z = fig.add_subplot(313)
@@ -2956,7 +3049,6 @@ def visual_check_markers_switching(m1=[], m2=[], m3=[], m4=[], c3dFile=[], chang
     plt.title(title + coordinate1 + ' coordinate')
     plt.ylabel('position in [mm]')
     plt.xlabel('samples')
-    plt.show()
 
     ax_y = fig.add_subplot(312)
     if m1:
@@ -2970,7 +3062,6 @@ def visual_check_markers_switching(m1=[], m2=[], m3=[], m4=[], c3dFile=[], chang
     plt.title(coordinate2 + ' coordinate')
     plt.ylabel('postion in [mm]')
     plt.xlabel('samples')
-    plt.show()
 
     ax_z = fig.add_subplot(313)
     if m1:
@@ -3042,5 +3133,363 @@ def visual_check_smoothing_effect(markerName, coordinateName, markers, markersNe
     plt.xlabel('samples')
     plt.tight_layout(pad=0.5)
 
-    plt.show(block=False)
+    plt.show()
 
+def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
+    """Determines the index of ball pickups for splitting throwing sets using RRS Y coordinate.
+
+    Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+    Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+    Version 1.0 (2022-03-11)
+
+    Arguments:
+        markers: Marker dictionary
+    Returns:
+        ball_pickups: list of ball pickup indexes correlating to dictionary indexes
+    """
+
+    # Initialize variables
+    ball_pickups = [0]
+    tuples = []
+    coordinate2 = 'Y'
+    coordinate3 = 'Z'
+
+    # Create figure
+    fig = plt.figure()
+    fig.add_subplot(311)
+    if m1:
+        plt.plot(markers[m1][coordinate3], label=m1)
+    if m2:
+        plt.plot(markers[m2][coordinate3], label=m2)
+    if m3:
+        plt.plot(markers[m3][coordinate3], label=m3)
+    if m4:
+        plt.plot(markers[m4][coordinate3], label=m4)
+    plt.title(coordinate3 + ' coordinate of Lower Arm')
+    plt.xlim(0,len(markers[m3][coordinate3]))
+    plt.ylabel('position in [mm]')
+    plt.legend()
+
+    fig.add_subplot(312)
+    if m1:
+        plt.plot(markers[m1][coordinate2], label=m1)
+    if m2:
+        plt.plot(markers[m2][coordinate2], label=m2)
+    if m3:
+        plt.plot(markers[m3][coordinate2], label=m3)
+    if m4:
+        plt.plot(markers[m4][coordinate2], label=m4)
+    plt.title(coordinate2 + ' coordinate of Lower Arm')
+    plt.xlim(0,len(markers[m3][coordinate3]))
+    plt.ylabel('position in [mm]')
+    plt.xlabel('samples')
+    plt.legend()
+
+    fig.add_subplot(313)
+    plt.plot(np.gradient(np.array(markers['VU_Baseball_R_C7']['Y'])))
+    plt.title('Gradient of C7')
+    plt.xlim(0,len(markers[m3][coordinate3]))
+
+    # Use ginput to manually select cut points
+    tuples = plt.ginput(15,-1,show_clicks= True, mouse_add=1, mouse_pop=3, mouse_stop=2)
+    for i in range(len(tuples)):
+        ball_pickups.append(np.round(tuples[i][0]))
+
+    # Creat list of cut_points
+    ball_pickups.append(len(markers[m1])+1)
+
+    ball_pickups = [int(x) for x in ball_pickups]
+
+    return ball_pickups
+
+def cut_markers(markers=[], ball_pickups=[], inning = []):
+    """Cuts marker data at indexs given by ball pickups
+
+    Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+    Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+    Version 1.0 (2022-03-14)
+
+    Arguments:
+        markers: Marker dictionary
+        ball_pickups: indexs of ball pickup
+    Returns:
+        cut_markers : dictionary contatining dictionarys of each individual pitch
+    """
+    markers_cut = {}
+
+    # Give new name to each pitch based on inning number
+    for i in range(len(ball_pickups)-1):
+        markers_cut["pitch_{0}".format((10*(inning-1)) + i+1)] = markers.copy()
+
+    i = 0
+
+    # Select only the relevant data to remain in new markers_cut
+    for pitch in markers_cut:
+        for marker in markers_cut[pitch]:
+            markers_cut[pitch][marker] = markers_cut[pitch][marker].iloc[ball_pickups[i]:ball_pickups[i+1]]
+        i = i + 1
+    return markers_cut
+
+def trim_markers(markers, fs = 120, lead = .2, lag = .8):
+    """trims marker data based on max derivative of C7
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-14)
+
+       Arguments:
+           markers: Marker dictionary
+           lead: trim time in s before max V
+           lag: lag time in s after max V
+           wc: cuttoff frequency of filter
+       Returns:
+           trimmed_markers : dictionary contatining dictionarys of each individual pitch trimed to new indexes
+       """
+    index_offset = 0
+    pitches_trimmed = copy.deepcopy(markers)
+    for pitch in pitches_trimmed:
+        # order: C7-int-cut-filt
+        ## select C7 marker to define a window at which to cut the data
+        backmark = np.array(pitches_trimmed[pitch]['VU_Baseball_R_C7']['Y'])
+        knip = (np.gradient(backmark)) # take 1st derivative of C7
+        knip_max = np.nanmax((knip))    # take the max of the 2nd derivative of C7 in the y-direction
+        index_cut = index_offset + int(np.array(np.where(knip == knip_max)))  # select the index this event happens
+
+        # improve the data by removing * elements
+        keys = list(pitches_trimmed[pitch].keys())  # all the elements
+        for j in range(len(pitches_trimmed[pitch])):
+            in_keys = keys[j]
+            # if a * is present in the element name, remove the element
+            if '*' in in_keys:
+                pitches_trimmed[pitch].pop(in_keys)
+
+        # initialize dictionaries
+        pitch_int = copy.deepcopy(pitches_trimmed[pitch])
+
+        pitch_in = dict()
+        keys_new = list(pitch_int.keys())   # all elements in the new marker data set
+
+        for k in range(len(pitch_int)):
+            key_new = keys_new[k]   # select element name
+            # if key_new != 'RAC1' and key_new != 'LMM': # certain pitches could cause errors
+            # cut the data
+            pitch_in[key_new] = pitch_int[key_new].loc[(index_cut - lead*fs):(index_cut + lag*fs), :] # cut the data .2s before and .4s after the index
+        pitches_trimmed[pitch] = pitch_in
+        index_offset = index_offset + len(markers[pitch]['VU_Baseball_R_C7'])
+    return pitches_trimmed
+
+def orient_markers(markers):
+    """Orients marker data to follow Bart's previous work
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-14)
+
+       Arguments:
+           markers: Marker dictionary
+       Returns:
+           oriented_markers : dictionary contatining dictionarys of each individual pitch oriented to new axis
+       """
+    oriented_markers = copy.deepcopy(markers)
+    for marker in markers:
+        oriented_markers[marker]['X'] = [markers[marker]['X'][index] * -1 for index in range(len(markers[marker]['X']))]
+        oriented_markers[marker]['Y'] = [markers[marker]['Z'][index]  for index in range(len(markers[marker]['X']))]
+        oriented_markers[marker]['Z'] = [markers[marker]['Y'][index]  for index in range(len(markers[marker]['X']))]
+    return oriented_markers
+
+def plot_inning_segment_moments(seg_M_joint,pitch_number,figure_number = 1):
+    """Plots the moments of all pitches in an inning for a given segment name on the segment local frame
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-24)
+
+       Arguments:
+           seg_M_joint: Marker dictionary
+       """
+    seg_M_joint_norm = [np.linalg.norm(seg_M_joint['forearm'][:, index]) for index in range(len(seg_M_joint['forearm'][0,:]))]
+
+
+    plt.figure(figure_number)
+    plt.subplot(411)
+    plt.plot(seg_M_joint['forearm'][0, :], label=pitch_number)
+    plt.title('Moments Projected on Forearm Coordination System : Add(+)/Abd(-)')
+    plt.ylabel('Moment [Nm]')
+    plt.xlim(60,120)
+    plt.legend()
+
+    plt.subplot(412)
+    plt.title('Moments Projected on Forearm Coordination System : Pro(+)/Sup(-)')
+    plt.plot(seg_M_joint['forearm'][1, :], label=pitch_number)
+    plt.ylabel('Moment [Nm]')
+    plt.xlim(60,120)
+
+    plt.subplot(413)
+    plt.title('Moments Projected on Forearm Coordination System : Flex(+)/Ext(-)')
+    plt.plot(seg_M_joint['forearm'][2, :], label=pitch_number)
+    plt.xlabel('Samples')
+    plt.ylabel('Moment [Nm]')
+    plt.xlim(60,120)
+
+    plt.subplot(414)
+    plt.title('Norm of Moments Projected on Forearm Coordination System')
+    plt.plot(seg_M_joint_norm, label=pitch_number)
+    plt.xlabel('Samples')
+    plt.ylabel('Moment [Nm]')
+    plt.xlim(60,120)
+
+def plot_inning_mean_moments(time,mean,pos_var,neg_var,figure_number = 1):
+    """Plots the moments of all pitches in an inning for a given segment name on the segment local frame
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-24)
+
+       Arguments:
+           seg_M_joint: Marker dictionary
+       """
+    mean_norm = [np.linalg.norm(mean['forearm'][:, index]) for index in range(len(mean['forearm'][0,:]))]
+    pos_var_norm = [np.linalg.norm(pos_var['forearm'][:, index]) for index in range(len(pos_var['forearm'][0,:]))]
+    neg_var_norm = [np.linalg.norm(neg_var['forearm'][:, index]) for index in range(len(neg_var['forearm'][0,:]))]
+
+    plt.figure(figure_number)
+    plt.subplot(411)
+    plt.plot(time,mean['forearm'][0, :], label='mean')
+    plt.fill_between(time,neg_var['forearm'][0, :],pos_var['forearm'][0, :],alpha=0.5, edgecolor='#CC4F1B', facecolor='#FF9848')
+    plt.title('Moments Projected on Forearm Coordination System : Add(+)/Abd(-)')
+    plt.ylabel('Moment [Nm]')
+    plt.xlabel('Time [s]')
+    plt.xlim(.5,1)
+    plt.legend()
+
+    plt.subplot(412)
+    plt.title('Moments Projected on Forearm Coordination System : Pro(+)/Sup(-)')
+    plt.plot(time,mean['forearm'][1, :], label='mean')
+    plt.fill_between(time,neg_var['forearm'][1, :],pos_var['forearm'][1, :],alpha=0.5, edgecolor='#CC4F1B', facecolor='#FF9848')
+    plt.ylabel('Moment [Nm]')
+    plt.xlabel('Time [s]')
+    plt.xlim(.5,1)
+
+    plt.subplot(413)
+    plt.title('Moments Projected on Forearm Coordination System : Flex(+)/Ext(-)')
+    plt.plot(time,mean['forearm'][2, :], label='mean')
+    plt.fill_between(time,neg_var['forearm'][2, :],pos_var['forearm'][2, :],alpha=0.5, edgecolor='#CC4F1B', facecolor='#FF9848')
+    plt.xlabel('Time [s]')
+    plt.xlim(.5,1)
+    plt.ylabel('Moment [Nm]')
+
+    plt.subplot(414)
+    plt.title('Norm of Moments Projected on Forearm Coordination System')
+    plt.plot(time,mean_norm, label='mean')
+    plt.fill_between(time,neg_var_norm,pos_var_norm,alpha=0.5, edgecolor='#CC4F1B', facecolor='#FF9848')
+    plt.xlabel('Time [s]')
+    plt.ylabel('Moment [Nm]')
+    plt.xlim(.5,1)
+    plt.show()
+
+def time_sync_moment_data(data, lag):
+    """Time syncs model segments by time delay "lag"
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-24)
+
+       Arguments:
+           data: Segment model of single pitch event
+           lag: amount of lag to add to model, indexes seperated from desired
+                ex: [-1 -2 1 0 -1 2]
+
+       Returns:
+           synced_model: Segment model of same size, with laged data, padded with nans
+       """
+    synced_data = copy.deepcopy(data)
+    for segment in data:
+        synced_data[segment] = np.array([[data[segment][axis][index + lag] for index in range(len(data[segment][0]) - lag)]for axis in range(len(data['forearm']))])
+        if lag < 0:
+            for axis in range(len(data['forearm'])):
+                for i in range(0, (-1 * lag)):
+                    synced_data[segment][axis][i] = 'NaN' # remove the [-i] loop around python does, replace with nans
+
+    return synced_data
+
+def time_sync_force_data(data, lag):
+    """Time syncs model segments by time delay "lag"
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-24)
+
+       Arguments:
+           data: Segment model of single pitch event
+           lag: amount of lag to add to model
+
+       Returns:
+           synced_model: Segment model of same size, with laged data
+       """
+    synced_data = copy.deepcopy(data)
+    for segment in data:
+        for location in data[segment]:
+            synced_data[segment][location] = np.array([[data[segment][location][axis][index + lag] for index in range(len(data[segment][location][0]) - lag)]for axis in range(len(data['forearm']['F_proximal']))])
+            if lag < 0:
+                for axis in range(len(data['forearm'])):
+                    for i in range(0, (-1 * lag)):
+                        synced_data[segment][location][axis][i] = 'NaN' # remove the [-i] loop around python does, replace with nans
+
+    return synced_data
+
+def calc_variability_seg_M_joint(Inning_seg_M_joint):
+    """calculates mean and variability of an inning of pitches
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-25)
+
+       Arguments:
+            Inning_seg_M_joint: Moment data of all segments in an inning
+            Inning_MER_events: List of MER events, only used to find shortest pitch
+       Returns:
+           Inning_mean_seg_M_joint: list of means based on time synced data
+           Inning_var_seg_M_joint: list of variability based on time synced data
+   """
+    pitch_numbers = Inning_seg_M_joint.keys()
+    for pitch_number in Inning_seg_M_joint:
+        seg_names = Inning_seg_M_joint[pitch_number].keys()
+        shortest_pitch = pitch_number
+        break
+
+    Inning_mean_seg_M_joint = dict.fromkeys(seg_names)
+    Inning_var_seg_M_joint = dict.fromkeys(seg_names)
+    Inning_mean_pos_var_seg_M_joint = dict.fromkeys(seg_names)
+    Inning_mean_neg_var_seg_M_joint = dict.fromkeys(seg_names)
+
+    for segment in seg_names:
+        # Initiallize lists
+        seg_mean = []
+        seg_var = []
+
+        for pitch in pitch_numbers:
+            if len(Inning_seg_M_joint[pitch]['pelvis'][0,:]) < len(Inning_seg_M_joint[shortest_pitch]['pelvis'][0,:]):
+                shortest_pitch = pitch
+
+        for index in range(len(Inning_seg_M_joint[shortest_pitch]['forearm'][1])):
+            seg_mean.append(np.nanmean([Inning_seg_M_joint[pitch]['forearm'][:,index] for pitch in Inning_seg_M_joint],0))
+            seg_var.append(np.nanvar([Inning_seg_M_joint[pitch]['forearm'][:,index] for pitch in Inning_seg_M_joint],0))
+
+        seg_mean = np.transpose(np.array(seg_mean))
+        seg_var = np.transpose(np.array(seg_var))
+
+        Inning_mean_seg_M_joint[segment] = seg_mean
+        Inning_var_seg_M_joint[segment] = seg_var
+        Inning_mean_pos_var_seg_M_joint[segment] = seg_mean + seg_var
+        Inning_mean_neg_var_seg_M_joint[segment] = seg_mean - seg_var
+
+    return Inning_mean_seg_M_joint, Inning_var_seg_M_joint, Inning_mean_pos_var_seg_M_joint, Inning_mean_neg_var_seg_M_joint
