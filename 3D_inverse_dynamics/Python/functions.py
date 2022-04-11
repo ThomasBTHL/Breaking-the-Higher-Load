@@ -3461,6 +3461,7 @@ def calc_variability_seg_M_joint(Inning_seg_M_joint):
            Inning_var_seg_M_joint: list of variability based on time synced data
    """
     pitch_numbers = Inning_seg_M_joint.keys()
+    # Determine seg names and a default shortest pitch
     for pitch_number in Inning_seg_M_joint:
         seg_names = Inning_seg_M_joint[pitch_number].keys()
         shortest_pitch = pitch_number
@@ -3472,17 +3473,30 @@ def calc_variability_seg_M_joint(Inning_seg_M_joint):
     Inning_mean_neg_var_seg_M_joint = dict.fromkeys(seg_names)
 
     for segment in seg_names:
-        # Initiallize lists
-        seg_mean = []
-        seg_var = []
-
         for pitch in pitch_numbers:
             if len(Inning_seg_M_joint[pitch]['pelvis'][0,:]) < len(Inning_seg_M_joint[shortest_pitch]['pelvis'][0,:]):
                 shortest_pitch = pitch
 
+        # Initiallize arrays
+        seg_mean = np.empty([len(Inning_seg_M_joint[shortest_pitch]['pelvis'][0,:]),3])
+        seg_mean[:] = np.NaN
+        seg_var = np.empty([len(Inning_seg_M_joint[shortest_pitch]['pelvis'][0,:]),3])
+        seg_var[:] = np.NaN
+
+        # determine indexes with at least 3 values
+        index_list = []
         for index in range(len(Inning_seg_M_joint[shortest_pitch]['forearm'][1])):
-            seg_mean.append(np.nanmean([Inning_seg_M_joint[pitch]['forearm'][:,index] for pitch in Inning_seg_M_joint],0))
-            seg_var.append(np.nanvar([Inning_seg_M_joint[pitch]['forearm'][:,index] for pitch in Inning_seg_M_joint],0))
+            nan_counter = 0
+            for pitch in pitch_numbers:
+                if np.isnan(np.mean(Inning_seg_M_joint[pitch]['forearm'][:,index])):
+                    nan_counter = nan_counter + 1
+            if nan_counter < 5:
+                index_list.append(index)
+
+        # calc mean and var for given indexes
+        for index in index_list:
+            seg_mean[index,:] = (np.nanmean([Inning_seg_M_joint[pitch]['forearm'][:,index] for pitch in Inning_seg_M_joint],0))
+            seg_var[index,:] = (np.nanvar([Inning_seg_M_joint[pitch]['forearm'][:,index] for pitch in Inning_seg_M_joint],0))
 
         seg_mean = np.transpose(np.array(seg_mean))
         seg_var = np.transpose(np.array(seg_var))

@@ -24,12 +24,13 @@ Version 1.5 (2020-07-15)"""
 Input area
 """
 
-length = 'Innings'
-filter_state = 'Unfiltered'
-pitcher = 'PP03'
-Inning = 'Inning_1'
+length = 'Pitches' # Pitches or Innings
+filter_state = 'Unfiltered' # Unfiltered or Filtered
+pitcher = 'PP03' #PP01 - PP15
+Inning = 'Inning_1' # Inning where you want to look, for pitches gives all pitches in inning
+
 fs = 120
-problem_pitches = [5, 10]
+problem_pitches = [] # pitches to remove
 
 # Selection based on right or left-handed pitchers
 if pitcher == ('PP09' or 'PP10' or 'PP11' or 'PP13'):
@@ -143,8 +144,9 @@ for pitch_number in inning_data:
         f.plot_inning_segment_moments(synced_seg_M_joint,pitch_number,figure_number = 2)
 #            f.plot_inning_segment_moments(seg_M_joint,pitch_number,figure_number = 1)
 
-print(Inning_MER_events)
-
+"""
+Post processing of elbow moments
+"""
 Inning_mean_seg_M_joint, Inning_var_seg_M_joint, Inning_mean_pos_var_seg_M_joint, Inning_mean_neg_var_seg_M_joint = f.calc_variability_seg_M_joint(Inning_seg_M_joint)
 
 time = np.linspace(0,len(Inning_mean_neg_var_seg_M_joint['forearm'][0,:])/120,len(Inning_mean_neg_var_seg_M_joint['forearm'][0,:]))
