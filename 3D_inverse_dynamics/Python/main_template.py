@@ -1,7 +1,7 @@
 """Import modules"""
 import copy
 from scipy.spatial.transform import Rotation as R
-import numpy
+import numpy as np
 import matplotlib.pyplot as plt
 from numpy import linalg as la
 import functions as f
