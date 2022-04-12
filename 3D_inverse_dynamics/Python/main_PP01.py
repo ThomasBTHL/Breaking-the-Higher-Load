@@ -26,7 +26,7 @@ Input area
 
 length = 'Pitches' # Pitches or Innings
 filter_state = 'Unfiltered' # Unfiltered or Filtered
-pitcher = 'PP03' #PP01 - PP15
+pitcher = 'PP01' #PP01 - PP15
 Inning = 'Inning_3' # Inning where you want to look, for pitches gives all pitches in inning
 
 fs = 120
@@ -98,7 +98,7 @@ for pitch_number in inning_data:
 
     # Save model as pickle
     # Path where the pickle will be saved. Last part will be the name of the file
-    filename = 'Model_pickles' + '/' + length + '/' + filter_state + '/' + pitcher + '/' + Inning + '/' + pitch_number
+    filename = 'Models' + '/' + length + '/' + filter_state + '/' + pitcher + '/' + Inning + '/' + pitch_number
     # Initialize the pickle file
     outfile = open(filename, 'wb')
     # Write the dictionary into the binary file
