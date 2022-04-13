@@ -247,6 +247,7 @@ def load_c3d(path):
 
     return dictionary
 
+
 def load_c3d_innings(path):
     """Load the position data with .c3d binary files into dictionary.
 
@@ -365,6 +366,7 @@ def save_dict2xlsx(dictionary, path, filename):
 
     print("Finished")
 
+
 def save_dict2xlsx_together(dictionary, path, filename):
     """Save the position data ordered in a dictionary in .csv format to path or folder
 
@@ -399,6 +401,7 @@ def save_dict2xlsx_together(dictionary, path, filename):
             pass
 
     print("Finished")
+
 
 def load_xlsx2dict(path):
     """Load the position data with .xlsx file(s) into dictionary.
@@ -697,7 +700,7 @@ def calc_thorax(IJ, PX, C7, T8, circumference=96, sample_freq=[], gender='male')
 
     Arguments:
         dataframe[samples, X:Y:Z] in meters
-        IJ: deepest point of the incisura jugularis sternalis
+            IJ: deepest point of the incisura jugularis sternalis
         PX: processus xiphoideus
         C7: processus spinosus of cervical vertebrae 7 (C7)
         T8: processus spinosus of thoracic vertebrae 8 (T8)
@@ -752,8 +755,10 @@ def calc_thorax(IJ, PX, C7, T8, circumference=96, sample_freq=[], gender='male')
     """Inertial parameters according to the Zatsiorsky regression equations"""
 
     # Inertial parameters are calculated according to the Zatsiorsky regression equations
-    #seg_length = np.nanmean(abs(PX[:, 2] - C7[:, 2]) * 100)  # Conversion from m to cm #GLOBAL
-    seg_length = np.nanmean([np.linalg.norm(PX[index,:] - C7[index,:]) for index in range(len(PX))]) * 100 # Conversion from m to cm (local) <-- check this
+    # seg_length = np.nanmean(abs(PX[:, 2] - C7[:, 2]) * 100)  # Conversion from m to cm #GLOBAL # Zat but just height
+    # seg_length = np.nanmean([np.linalg.norm(PX[index, :] - C7[index, :]) for index in range(len(PX))]) * 100 # Zat but threw body
+    seg_length = np.nanmean([np.linalg.norm(PX[index, :] - IJ[index, :]) for index in range(len(PX))]) * 100 # along front
+    # seg_length = np.nanmean([np.linalg.norm(T8[index,:] - C7[index,:]) for index in range(len(PX))]) * 100 # along spine
 
     # Initialisation inertial_parameters_sub variable
     inertial_parameters = np.array([])
@@ -768,6 +773,9 @@ def calc_thorax(IJ, PX, C7, T8, circumference=96, sample_freq=[], gender='male')
 
         # 49.34% From processus xiphoideus to processus spinosus of cervical vertebrae 7 (Leva from Zatsiorsky - 1996)
         z_COM = PX[:, 2] + (C7[:, 2] - PX[:, 2]) * 0.4934  # 'Z'-Coordinates
+
+        # Biomechanical length correction
+        seg_length = seg_length * (242.1 / 170.7)
 
         # Combine the x, y and z coordinates of the center of mass
         COM = np.array([x_COM, y_COM, z_COM])
@@ -858,6 +866,7 @@ def calc_thorax(IJ, PX, C7, T8, circumference=96, sample_freq=[], gender='male')
     dictionary['Iprincipal'] = inertial_parameters[1:4]  # Principal moments of inertia
 
     return dictionary
+
 
 def calc_thorax_without_PX(IJ, C7, T8, circumference=96, sample_freq=[], gender='male'):
     """ Calculates the local coordination system of the trunk segment according to the ISB definition through
@@ -1086,7 +1095,7 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, ge
     y_axis = np.cross(z_axis_norm, x_axis_norm)
     y_axis_norm = np.array([y_axis[index, :] / np.linalg.norm(y_axis[index, :]) for index in range(len(y_axis))])
 
-    # Compose rotationmatrix
+    # Compose rotationmatrix. transpose is taken to correct for cross products giving laying vectors instead of standing
     gRseg = [np.transpose(np.array((x_axis_norm[index, :], y_axis_norm[index, :], z_axis_norm[index, :]))) for index in
              range(len(z_axis_norm))]
 
@@ -1130,7 +1139,8 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, ge
     # Conversion to local coordination system
     #segMSIAS = np.array([gRseg[index].dot(((LSIAS + RSIAS) / 2)[index]) for index in range(len(pelvis_width_norm))])
     segMSIAS = numpy.zeros(numpy.shape(origin))
-    segMSIPS = np.array([numpy.ndarray.transpose(gRseg[index]).dot(((LSIPS + RSIPS) / 2 - origin)[index]) for index in range(len(pelvis_width_norm))])
+    #segMSIPS = np.array([numpy.ndarray.transpose(gRseg[index]).dot(((LSIPS + RSIPS) / 2 - origin)[index]) for index in range(len(pelvis_width_norm))])
+    segMSIPS = np.array([(gRseg[index]).dot(((LSIPS + RSIPS) / 2 - origin)[index]) for index in range(len(pelvis_width_norm))])
 
 
     # Midpoint hip joint center
@@ -1163,7 +1173,7 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, ge
         # Calculate the biomechanical length of the pelvis segment (segment length correction)
         # Omphalion to the hip segmentation planes intersection, female: 256.8, male: 251.7 (biomechanical length
         # Omphalion to the midpoint of both hip joint centers, female: 181.5, male: 145.7 (alternative length)
-        seg_length = seg_length * (251.7 / 145.7)
+        seg_length = seg_length * (251.7 / (251.7 - 145.7))
 
         # Regression parameters for inertial parameters calculations obtained from Zatsiorsky
         reg_parameters = np.transpose([3.60, 10.90, 0.76, 8.92])
@@ -1262,6 +1272,7 @@ def calc_pelvis(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, ge
     dictionary['Iprincipal'] = inertial_parameters[1:4]  # Principal moments of inertia
 
     return dictionary
+
 
 def calc_pelvis_without_LASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, gender='male'):
     """ Quick and dirty solutions: Makes local coordidnate system without LSIAS, can only be used for the magnitude not for other calculations!
@@ -1494,6 +1505,7 @@ def calc_pelvis_without_LASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circum
     dictionary['Iprincipal'] = inertial_parameters[1:4]  # Principal moments of inertia
 
     return dictionary
+
 
 def calc_pelvis_without_RASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circumference=97, gender='male'):
     """ Quick and dirty solutions: Makes local coordidnate system without RSIAS, can only be used for the magnitude not for other calculations!
@@ -2914,6 +2926,7 @@ def butter_lowpass_filter(data, cutoff, fs, order):
 
     return data_out
 
+
 def butter_lowpass_filter_inning(marker_innings, cutoff, fs, order):
     filtered_inning = copy.deepcopy(marker_innings)
     for single_pitch in marker_innings:
@@ -3135,6 +3148,7 @@ def visual_check_smoothing_effect(markerName, coordinateName, markers, markersNe
 
     plt.show()
 
+
 def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
     """Determines the index of ball pickups for splitting throwing sets using RRS Y coordinate.
 
@@ -3203,6 +3217,7 @@ def ball_pickup_indexs(m1=[], m2=[], m3=[], m4=[], markers=[]):
 
     return ball_pickups
 
+
 def cut_markers(markers=[], ball_pickups=[], inning = []):
     """Cuts marker data at indexs given by ball pickups
 
@@ -3231,6 +3246,7 @@ def cut_markers(markers=[], ball_pickups=[], inning = []):
             markers_cut[pitch][marker] = markers_cut[pitch][marker].iloc[ball_pickups[i]:ball_pickups[i+1]]
         i = i + 1
     return markers_cut
+
 
 def trim_markers(markers, fs = 120, lead = .2, lag = .8):
     """trims marker data based on max derivative of C7
@@ -3281,6 +3297,7 @@ def trim_markers(markers, fs = 120, lead = .2, lag = .8):
         index_offset = index_offset + len(markers[pitch]['VU_Baseball_R_C7'])
     return pitches_trimmed
 
+
 def orient_markers(markers):
     """Orients marker data to follow Bart's previous work
 
@@ -3300,6 +3317,7 @@ def orient_markers(markers):
         oriented_markers[marker]['Y'] = [markers[marker]['Z'][index]  for index in range(len(markers[marker]['X']))]
         oriented_markers[marker]['Z'] = [markers[marker]['Y'][index]  for index in range(len(markers[marker]['X']))]
     return oriented_markers
+
 
 def plot_inning_segment_moments(seg_M_joint,pitch_number,figure_number = 1):
     """Plots the moments of all pitches in an inning for a given segment name on the segment local frame
@@ -3342,6 +3360,7 @@ def plot_inning_segment_moments(seg_M_joint,pitch_number,figure_number = 1):
     plt.xlabel('Samples')
     plt.ylabel('Moment [Nm]')
     plt.xlim(60,120)
+
 
 def plot_inning_mean_moments(time,mean,pos_var,neg_var,figure_number = 1):
     """Plots the moments of all pitches in an inning for a given segment name on the segment local frame
@@ -3393,6 +3412,7 @@ def plot_inning_mean_moments(time,mean,pos_var,neg_var,figure_number = 1):
     plt.xlim(.5,1)
     plt.show()
 
+
 def time_sync_moment_data(data, lag):
     """Time syncs model segments by time delay "lag"
 
@@ -3419,6 +3439,7 @@ def time_sync_moment_data(data, lag):
 
     return synced_data
 
+
 def time_sync_force_data(data, lag):
     """Time syncs model segments by time delay "lag"
 
@@ -3444,6 +3465,7 @@ def time_sync_force_data(data, lag):
                         synced_data[segment][location][axis][i] = 'NaN' # remove the [-i] loop around python does, replace with nans
 
     return synced_data
+
 
 def calc_variability_seg_M_joint(Inning_seg_M_joint):
     """calculates mean and variability of an inning of pitches

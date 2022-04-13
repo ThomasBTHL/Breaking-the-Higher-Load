@@ -27,10 +27,10 @@ Input area
 length = 'Pitches' # Pitches or Innings
 filter_state = 'Unfiltered' # Unfiltered or Filtered
 pitcher = 'PP03' #PP01 - PP15
-Inning = 'Inning_1' # Inning where you want to look, for pitches gives all pitches in inning
+Inning = 'Inning_2' # Inning where you want to look, for pitches gives all pitches in inning
 
 fs = 120
-problem_pitches = [] # pitches to remove
+problem_pitches = [5,10,14] # pitches to remove
 
 # Selection based on right or left-handed pitchers
 if pitcher == ('PP09' or 'PP10' or 'PP11' or 'PP13'):
