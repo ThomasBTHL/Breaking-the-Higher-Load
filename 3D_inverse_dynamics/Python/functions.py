@@ -2908,6 +2908,53 @@ def MER_event(model):
         return float('NaN'), float('NaN')
 
 
+def Cross_correlation_sync_event(model_1,model_2,fs = 120):
+    """
+    This function determines a time lag based on the cross correlation of 2 pitches
+    """
+
+    # Determine rotation matrix of the upperarm
+    # R_upperarm = model_1['upperarm']['gRseg']
+
+    # Determine rotation matrix of the thorax
+    # R_thorax = model_1['thorax']['gRseg']
+
+    # Euler angles humerus relative to the thorax = shoulder external rotation
+    # GH_1 = euler_angles('xyz', R_upperarm, R_thorax) #zyz
+    # SER = GH[2,:]  # Select the rotation of the humerus relative to the thorax in the z-direction
+
+    # Calculate the net forces according the newton-euler method
+    F_joint_1 = calc_net_reaction_force(model_1)
+    F_joint_2 = calc_net_reaction_force(model_2)
+
+    # Calculate the net moments according the newton-euler method
+    M_joint_1 = calc_net_reaction_moment(model_1, F_joint_1)
+    M_joint_2 = calc_net_reaction_moment(model_2, F_joint_2)
+
+#    cross_correlation = numpy.correlate(M_joint_1['forearm']['M_proximal'][0,:], M_joint_2['forearm']['M_proximal'][0,:], mode='full')
+    delay_indexes = lag_finder(M_joint_1['forearm']['M_proximal'][0,:], M_joint_2['forearm']['M_proximal'][0,:], fs)
+    delay_s = delay_indexes / fs
+
+    return delay_s, delay_indexes
+
+
+def lag_finder(y1, y2, sr):
+    not_nan = ~np.logical_or(np.isnan(y1), np.isnan(y2))
+    y1 = y1[not_nan]
+    y2 = y2[not_nan]
+
+    n = len(y1)
+
+    delay_index = np.argmax(scipy.correlate(y2, y1, mode='same')) -int(n/2)
+
+    return delay_index
+#    plt.figure()
+#    plt.plot(delay_arr, corr)
+#    plt.title('Lag: ' + str(np.round(delay, 3)) + ' s')
+#    plt.xlabel('Lag')
+#    plt.ylabel('Correlation coeff')
+#    plt.show()
+
 def butter_lowpass_filter(data, cutoff, fs, order):
     # low-pass parameters, using ba
     nyq = 0.5 * fs

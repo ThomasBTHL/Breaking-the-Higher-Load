@@ -70,6 +70,8 @@ Inning_MER_events = []
 Inning_seg_M_joint = dict()
 Inning_F_joint = dict()
 
+j = 0
+
 for pitch_number in inning_data:
     # Subdivide dictionary into separate variables
     pitch = inning_data[pitch_number]
@@ -95,6 +97,10 @@ for pitch_number in inning_data:
 
     # Rearrange model to have the correct order of segments for 'top-down' method
     model = f.rearrange_model(model, 'top-down')
+
+    if (j == 0):
+        model_1 = copy.deepcopy(model)
+        j = 1
 
     # Save model as pickle
     # Path where the pickle will be saved. Last part will be the name of the file
@@ -130,6 +136,8 @@ for pitch_number in inning_data:
             seg_M_joint[segment][0:2, :] = -seg_M_joint[segment][0:2, :]
 
         # Determine MER index
+        f.Cross_correlation_sync_event(model_1, model)
+
         [pitch_MER, pitch_index_MER] = f.MER_event(model)
         Inning_MER_events.append(pitch_index_MER)
 

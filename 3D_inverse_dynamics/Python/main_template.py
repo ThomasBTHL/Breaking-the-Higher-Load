@@ -27,10 +27,10 @@ Input area
 length = 'Pitches' # Pitches or Innings
 filter_state = 'Unfiltered' # Unfiltered or Filtered
 pitcher = 'PP03' #PP01 - PP15
-Inning = 'Inning_3' # Inning where you want to look, for pitches gives all pitches in inning
+Inning = 'Inning_9' # Inning where you want to look, for pitches gives all pitches in inning
 
 fs = 120
-problem_pitches = [5,10,14] # pitches to remove
+problem_pitches = [5,10,14,73] # pitches to remove
 
 # Selection based on right or left-handed pitchers
 if pitcher == ('PP09' or 'PP10' or 'PP11' or 'PP13'):
@@ -67,8 +67,13 @@ else:
 
 # Initialize variables
 Inning_MER_events = []
+Inning_cross_corr_events = []
+Inning_max_normM_events = []
+Inning_max_M_events = []
 Inning_seg_M_joint = dict()
 Inning_F_joint = dict()
+
+j = 0
 
 for pitch_number in inning_data:
     # Subdivide dictionary into separate variables
@@ -96,9 +101,13 @@ for pitch_number in inning_data:
     # Rearrange model to have the correct order of segments for 'top-down' method
     model = f.rearrange_model(model, 'top-down')
 
+    if (j == 0):
+        model_1 = copy.deepcopy(model)
+        j = 1
+
     # Save model as pickle
     # Path where the pickle will be saved. Last part will be the name of the file
-    filename = 'Model_pickles' + '/' + length + '/' + filter_state + '/' + pitcher + '/' + Inning + '/' + pitch_number
+    filename = 'Models' + '/' + length + '/' + filter_state + '/' + pitcher + '/' + Inning + '/' + pitch_number
     # Initialize the pickle file
     outfile = open(filename, 'wb')
     # Write the dictionary into the binary file
@@ -133,16 +142,42 @@ for pitch_number in inning_data:
         [pitch_MER, pitch_index_MER] = f.MER_event(model)
         Inning_MER_events.append(pitch_index_MER)
 
+        # Determine cross correlation index
+        cross_corr_s , cross_corr_index = f.Cross_correlation_sync_event(model_1, model)
+        Inning_cross_corr_events.append(cross_corr_index)
+
+        # Determine norm max moment index
+        max_normM_index = np.nanargmax([np.linalg.norm(seg_M_joint['forearm'][:, index]) for index in range(len(seg_M_joint['forearm'][0,:]))])
+        Inning_max_normM_events.append(max_normM_index)
+
+        # Determine max moment [0] correlation index
+        max_M_index = np.nanargmax(seg_M_joint['forearm'][0,:])
+        Inning_max_M_events.append(max_M_index)
+
+        # Select which delay method to use
+        # delay = pitch_index_MER - Inning_MER_events[0] # MER
+        # delay = cross_corr_index # cross corr
+        # delay = max_normM_index - Inning_max_normM_events[0] # max norm moment
+        delay = max_M_index - Inning_max_M_events[0] # max moment
+
         # Visualisation of the global and local net moments
-        synced_seg_M_joint = f.time_sync_moment_data(seg_M_joint, pitch_index_MER - Inning_MER_events[0])
+        synced_seg_M_joint = f.time_sync_moment_data(seg_M_joint, delay)
         Inning_seg_M_joint[pitch_number] = synced_seg_M_joint
 
-        synced_seg_F_joint = f.time_sync_force_data(F_joint, pitch_index_MER - Inning_MER_events[0])
+        synced_seg_F_joint = f.time_sync_force_data(F_joint, delay)
         Inning_F_joint[pitch_number] = synced_seg_F_joint
 
         # Visualisation of the global and local net moments
         f.plot_inning_segment_moments(synced_seg_M_joint,pitch_number,figure_number = 2)
 #            f.plot_inning_segment_moments(seg_M_joint,pitch_number,figure_number = 1)
+print('MER')
+print(Inning_MER_events)
+print('Cross correlation')
+print(Inning_cross_corr_events)
+print('norm M')
+print(Inning_max_normM_events)
+print('M')
+print(Inning_max_M_events)
 
 """
 Post processing of elbow moments
