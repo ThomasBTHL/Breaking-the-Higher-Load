@@ -227,7 +227,7 @@ def load_c3d(path):
             # Loop through the markers and frames containing the position data and reorganise and combine the data from the .c3d binary file in the dictionary
             for markers in tqdm(range(reader.point_used), unit="marker"):
                 # Displays progressbar in console
-                sleep(0.1)
+                sleep(0.001)
                 pass
 
                 for samples in range(len(data)):
@@ -512,11 +512,11 @@ def inertial_parameters_ratio(inertial_sub, inertial_pop, segment='undefined'):
     inertial_z_ratio = ((inertial_sub[3] / inertial_pop[3]) * 100) - 100
 
     # Display percentages
-    print('Segment: ' + segment.capitalize() +
-          '\nMass: ' + "{:.2f}".format(mass_ratio) + '%' +
-          '\nInertial X-Axis: ' + "{:.2f}".format(inertial_x_ratio) + '%' +
-          '\nInertial Y-Axis: ' + "{:.2f}".format(inertial_y_ratio) + '%' +
-          '\nInertial Z-Axis: ' + "{:.2f}".format(inertial_z_ratio) + '%' + '\n')
+    # print('Segment: ' + segment.capitalize() +
+    #       '\nMass: ' + "{:.2f}".format(mass_ratio) + '%' +
+    #       '\nInertial X-Axis: ' + "{:.2f}".format(inertial_x_ratio) + '%' +
+    #       '\nInertial Y-Axis: ' + "{:.2f}".format(inertial_y_ratio) + '%' +
+    #       '\nInertial Z-Axis: ' + "{:.2f}".format(inertial_z_ratio) + '%' + '\n')
 
     # Emerge in one dataframe
     inertial_ratios = np.transpose(np.array(([mass_ratio, inertial_x_ratio, inertial_y_ratio, inertial_z_ratio])))
