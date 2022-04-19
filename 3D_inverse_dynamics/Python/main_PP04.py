@@ -44,7 +44,7 @@ Output setup
 Fatigue_dictionary = {}
 
 segments = ['hand','forearm','upperarm']
-outputs = ['max_norm_moment']
+outputs = ['max_norm_moment','max_abduction_moment']
 for segment in segments:
     Fatigue_dictionary[segment] = {}
     for output in outputs:
@@ -155,31 +155,29 @@ for Inning in Innings:
             Time syncing methods
             """
             # Determine MER index
-            # [pitch_MER, pitch_index_MER] = f.MER_event(model)
-            # Inning_MER_events.append(pitch_index_MER)
-            # sync_type = "MER"
-            # delay = pitch_index_MER - Inning_MER_events[0] # MER
-
+            [pitch_MER, pitch_index_MER] = f.MER_event(model)
+            Inning_MER_events.append(pitch_index_MER)
             # Determine cross correlation index
-            # cross_corr_s , cross_corr_index = f.Cross_correlation_sync_event(model_1, model)
-            # Inning_cross_corr_events.append(cross_corr_index)
-            # sync_type = "Corr"
-            # delay = cross_corr_index # cross corr
+            cross_corr_s , cross_corr_index = f.Cross_correlation_sync_event(model_1, model)
+            Inning_cross_corr_events.append(cross_corr_index)
 
             # Determine norm max moment index
-            # max_normM_index = np.nanargmax([np.linalg.norm(seg_M_joint['forearm'][:, index]) for index in range(len(seg_M_joint['forearm'][0,:]))])
-            # Inning_max_normM_events.append(max_normM_index)
-            # sync_type = "normMoment"
-            # delay = max_normM_index - Inning_max_normM_events[0] # max norm moment
+            max_normM_index = np.nanargmax([np.linalg.norm(seg_M_joint['forearm'][:, index]) for index in range(len(seg_M_joint['forearm'][0,:]))])
+            Inning_max_normM_events.append(max_normM_index)
 
-            # Determine max moment [0] correlation index
+            # Determine max abduction moment [0] correlation index
             max_M_index = np.nanargmax(seg_M_joint['forearm'][0,:])
             Inning_max_M_events.append(max_M_index)
-            sync_type = "Moment"
-            delay = max_M_index - Inning_max_M_events[0] # max moment
 
-            # No sync
-            # delay = 0
+            # Select which delay method to use for making variability graphs <--- Choose here!!!
+            # sync_type = "MER"
+            # delay = pitch_index_MER - Inning_MER_events[0] # MER
+            # sync_type = "Corr"
+            # delay = cross_corr_index # cross corr
+            # sync_type = "norm Moment"
+            # delay = max_normM_index - Inning_max_normM_events[0] # max norm moment
+            sync_type = "abduction Moment"
+            delay = max_M_index - Inning_max_M_events[0] # max moment
 
             # Visualisation of the global and local net moments
             synced_seg_M_joint = f.time_sync_moment_data(seg_M_joint, delay)
@@ -198,6 +196,7 @@ for Inning in Innings:
             # Max moment data for fatigue study
             for segment in segments:
                 Fatigue_dictionary[segment]['max_norm_moment'][pitch_number] = np.nanmax([np.linalg.norm(seg_M_joint[segment][:, index]) for index in range(len(seg_M_joint[segment][0, :]))])
+                Fatigue_dictionary[segment]['max_abduction_moment'][pitch_number] = np.nanmax([(seg_M_joint[segment][0, index]) for index in range(len(seg_M_joint[segment][0, :]))])
 
             """
             Save the max moment data to results folder
@@ -229,12 +228,12 @@ for Inning in Innings:
     # print(Inning_max_normM_events)
     # print('M')
     # print(Inning_max_M_events)
-
+    # plt.show()
 """
 Interpreting pitcher data
 """
 for segment in segments:
-    ser_segment = pd.Series(data = Fatigue_dictionary[segment]['max_norm_moment'], index = Fatigue_dictionary[segment]['max_norm_moment'].keys())
+    ser_segment = pd.Series(data = Fatigue_dictionary[segment]['max_abduction_moment'], index = Fatigue_dictionary[segment]['max_abduction_moment'].keys())
     rolling_var = ser_segment.rolling(10).var()
 
     plt.figure()
