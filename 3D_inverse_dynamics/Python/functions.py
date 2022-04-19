@@ -3385,28 +3385,28 @@ def plot_inning_segment_moments(seg_M_joint,pitch_number,figure_number = 1):
     plt.plot(seg_M_joint['forearm'][0, :], label=pitch_number)
     plt.title('Moments Projected on Forearm Coordination System : Add(+)/Abd(-)')
     plt.ylabel('Moment [Nm]')
-    plt.xlim(60,120)
+    plt.xlim(40,100)
     plt.legend()
 
     plt.subplot(412)
     plt.title('Moments Projected on Forearm Coordination System : Pro(+)/Sup(-)')
     plt.plot(seg_M_joint['forearm'][1, :], label=pitch_number)
     plt.ylabel('Moment [Nm]')
-    plt.xlim(60,120)
+    plt.xlim(40,100)
 
     plt.subplot(413)
     plt.title('Moments Projected on Forearm Coordination System : Flex(+)/Ext(-)')
     plt.plot(seg_M_joint['forearm'][2, :], label=pitch_number)
     plt.xlabel('Samples')
     plt.ylabel('Moment [Nm]')
-    plt.xlim(60,120)
+    plt.xlim(40,100)
 
     plt.subplot(414)
     plt.title('Norm of Moments Projected on Forearm Coordination System')
     plt.plot(seg_M_joint_norm, label=pitch_number)
     plt.xlabel('Samples')
     plt.ylabel('Moment [Nm]')
-    plt.xlim(60,120)
+    plt.xlim(40,100)
 
 
 def plot_inning_mean_moments(time,mean,pos_var,neg_var,figure_number = 1):
@@ -3457,7 +3457,7 @@ def plot_inning_mean_moments(time,mean,pos_var,neg_var,figure_number = 1):
     plt.xlabel('Time [s]')
     plt.ylabel('Moment [Nm]')
     plt.xlim(.5,1)
-    plt.show()
+    plt.show(block=False)
 
 
 def time_sync_moment_data(data, lag):

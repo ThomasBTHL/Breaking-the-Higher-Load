@@ -197,6 +197,18 @@ for Inning in Innings:
             for segment in segments:
                 Fatigue_dictionary[segment]['max_norm_moment'][pitch_number] = np.nanmax([np.linalg.norm(seg_M_joint[segment][:, index]) for index in range(len(seg_M_joint[segment][0, :]))])
 
+            """
+            Save the max moment data to results folder
+            """
+            # Path where the pickle will be saved. Last part will be the name of the file
+            filename = 'Results/Pitches/Unfiltered/' + pitcher + '/' + Inning + '/' + 'Max_norm_moments'
+            # Initialize the pickle file
+            outfile = open(filename, 'wb')
+            # Write the dictionary into the binary file
+            pickle.dump(Fatigue_dictionary, outfile)
+            outfile.close()
+            print('Fatigue dictionary has been saved.')
+
     """
     Making pretty variability plots
     """
