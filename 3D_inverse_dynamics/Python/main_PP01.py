@@ -38,20 +38,19 @@ if pitcher == ('PP09' or 'PP10' or 'PP11' or 'PP13'):
 else:
     side = 'right'
 
-"""
-Output setup
-"""
-Fatigue_dictionary = {}
-
-segments = ['hand','forearm','upperarm']
-outputs = ['max_norm_moment','max_abduction_moment']
-for segment in segments:
-    Fatigue_dictionary[segment] = {}
-    for output in outputs:
-        Fatigue_dictionary[segment][output] = {}
-
-
 for Inning in Innings:
+    """
+    Output setup
+    """
+    Fatigue_dictionary = {}
+
+    segments = ['hand', 'forearm', 'upperarm']
+    outputs = ['max_norm_moment', 'max_abduction_moment']
+    for segment in segments:
+        Fatigue_dictionary[segment] = {}
+        for output in outputs:
+            Fatigue_dictionary[segment][output] = {}
+
     """
     Inning setup
     """
@@ -228,19 +227,19 @@ for Inning in Innings:
     # print(Inning_max_normM_events)
     # print('M')
     # print(Inning_max_M_events)
-    # plt.show()
-"""
-Interpreting pitcher data
-"""
-for segment in segments:
-    ser_segment = pd.Series(data = Fatigue_dictionary[segment]['max_abduction_moment'], index = Fatigue_dictionary[segment]['max_abduction_moment'].keys())
-    rolling_var = ser_segment.rolling(10).var()
-
-    plt.figure()
-    plt.subplot(2,1,1)
-    plt.plot(ser_segment)
-
-    plt.subplot(2,1,2)
-    plt.plot(rolling_var)
-
     plt.show()
+# """
+# Interpreting pitcher data
+# """
+# for segment in segments:
+#     ser_segment = pd.Series(data = Fatigue_dictionary[segment]['max_abduction_moment'], index = Fatigue_dictionary[segment]['max_abduction_moment'].keys())
+#     rolling_var = ser_segment.rolling(10).var()
+#
+#     plt.figure()
+#     plt.subplot(2,1,1)
+#     plt.plot(ser_segment)
+#
+#     plt.subplot(2,1,2)
+#     plt.plot(rolling_var)
+#
+plt.show()
