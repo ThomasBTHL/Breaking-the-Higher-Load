@@ -29,7 +29,7 @@ pitcher = 'PP02' #PP01 - PP15
 Innings = ['Inning_1','Inning_2','Inning_3','Inning_4','Inning_5','Inning_6'] # Inning where you want to look, for pitches gives all pitches in inning
 
 fs = 120
-problem_pitches = [1,5,32,34,36,37,38,39,40,43,44,45,46,47,48,49,50,53,54,55,56,57,58,59,60] # pitches to remove
+problem_pitches = [1,5,8,9,10,18,21,28,32,34,36,37,38,39,40,43,44,45,46,47,48,49,50,53,54,55,56,57,58,59,60] # pitches to remove
 
 # Selection based on right or left-handed pitchers
 if pitcher == ('PP09' or 'PP10' or 'PP11' or 'PP13'):
