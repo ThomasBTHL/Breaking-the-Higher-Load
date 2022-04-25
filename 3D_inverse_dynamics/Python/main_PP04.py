@@ -38,17 +38,13 @@ if pitcher == ('PP09' or 'PP10' or 'PP11' or 'PP13'):
 else:
     side = 'right'
 
-"""
-Output setup
-"""
-Fatigue_dictionary = {}
+forearm_length = []
+upperarm_length = []
+hand_length = []
 
-segments = ['hand','forearm','upperarm']
-outputs = ['max_norm_moment','max_abduction_moment']
-for segment in segments:
-    Fatigue_dictionary[segment] = {}
-    for output in outputs:
-        Fatigue_dictionary[segment][output] = {}
+mean_forearm_length = 26.595358306227542
+mean_upperarm_length = 27.23938265717186
+mean_hand_length = 14.9429087641141
 
 for Inning in Innings:
 
@@ -67,7 +63,7 @@ for Inning in Innings:
     """
     Inning setup
     """
-    j = 0  # used for time sync of inning data
+    j = 0 # used for time sync of inning data
     Inning_MER_events = []
     Inning_cross_corr_events = []
     Inning_max_normM_events = []
@@ -106,32 +102,29 @@ for Inning in Innings:
 
         # Calculate the segment parameters
         # --- Pelvis Segment --- #
-        pelvis_motion = f.calc_pelvis(pitch['VU_Baseball_R_RASIS'], pitch['VU_Baseball_R_LASIS'],
-                                      pitch['VU_Baseball_R_RPSIS'], pitch['VU_Baseball_R_LPSIS'], gender='male',
-                                      sample_freq=fs)
+        pelvis_motion = f.calc_pelvis(pitch['VU_Baseball_R_RASIS'], pitch['VU_Baseball_R_LASIS'], pitch['VU_Baseball_R_RPSIS'], pitch['VU_Baseball_R_LPSIS'], gender='male',sample_freq=fs)
 
         # --- Thorax Segment --- #
-        thorax_motion = f.calc_thorax(pitch['VU_Baseball_R_IJ'], pitch['VU_Baseball_R_PX'], pitch['VU_Baseball_R_C7'],
-                                      pitch['VU_Baseball_R_T8'], gender='male', sample_freq=fs)
+        thorax_motion = f.calc_thorax(pitch['VU_Baseball_R_IJ'], pitch['VU_Baseball_R_PX'], pitch['VU_Baseball_R_C7'], pitch['VU_Baseball_R_T8'], gender='male',sample_freq=fs)
 
         # --- Upperarm Segment --- #
-        upperarm_motion = f.calc_upperarm(pitch['VU_Baseball_R_RLHE'], pitch['VU_Baseball_R_RMHE'],
-                                          pitch['VU_Baseball_R_RAC'], side, gender='male', sample_freq=fs)
+        upperarm_motion = f.calc_upperarm(pitch['VU_Baseball_R_RLHE'], pitch['VU_Baseball_R_RMHE'], pitch['VU_Baseball_R_RAC'], side, gender='male',sample_freq=fs, mean_seg_length = mean_upperarm_length)
 
         # --- Forearm Segment --- #
-        forearm_motion = f.calc_forearm(pitch['VU_Baseball_R_RLHE'], pitch['VU_Baseball_R_RMHE'],
-                                        pitch['VU_Baseball_R_RUS'], pitch['VU_Baseball_R_RRS'], side, gender='male',
-                                        sample_freq=fs)
+        forearm_motion = f.calc_forearm(pitch['VU_Baseball_R_RLHE'], pitch['VU_Baseball_R_RMHE'], pitch['VU_Baseball_R_RUS'], pitch['VU_Baseball_R_RRS'], side, gender='male',sample_freq=fs, mean_seg_length= mean_forearm_length)
 
         # --- Hand Segment --- #
-        hand_motion = f.calc_hand(pitch['VU_Baseball_R_RUS'], pitch['VU_Baseball_R_RRS'], pitch['VU_Baseball_R_RHIP3'],
-                                  side, gender='male', sample_freq=fs)
+        hand_motion = f.calc_hand(pitch['VU_Baseball_R_RUS'], pitch['VU_Baseball_R_RRS'], pitch['VU_Baseball_R_RHIP3'], side, gender='male',sample_freq=fs, mean_seg_length = mean_hand_length)
 
         # Combine all the referenced segment dictionaries into dictionary in order to loop through the keys for net force and moment calculations
         model = f.segments2combine(pelvis_motion, thorax_motion, upperarm_motion, forearm_motion, hand_motion)
 
         # Rearrange model to have the correct order of segments for 'top-down' method
         model = f.rearrange_model(model, 'top-down')
+
+        hand_length.append(model['hand']['seg_length'])
+        forearm_length.append(model['forearm']['seg_length'])
+        upperarm_length.append(model['upperarm']['seg_length'])
 
         if (j == 0):
             model_1 = copy.deepcopy(model)
@@ -160,8 +153,7 @@ for Inning in Innings:
                 np.isnan(np.nanmean(M_joint['pelvis']['M_proximal'])) == False):
 
             # Project the calculated net moments according the newton-euler method to local coordination system to be anatomically meaningful
-            joints = {'hand': 'wrist', 'forearm': 'elbow', 'upperarm': 'shoulder', 'thorax': 'spine',
-                      'pelvis': 'hip'}  # Joints used to calculate the net moments according the newton-euler method
+            joints = {'hand': 'wrist', 'forearm': 'elbow', 'upperarm': 'shoulder', 'thorax': 'spine', 'pelvis': 'hip'}  # Joints used to calculate the net moments according the newton-euler method
 
             # Initialise parameters
             seg_M_joint = dict()
@@ -178,16 +170,15 @@ for Inning in Innings:
             [pitch_MER, pitch_index_MER] = f.MER_event(model)
             Inning_MER_events.append(pitch_index_MER)
             # Determine cross correlation index
-            cross_corr_s, cross_corr_index = f.Cross_correlation_sync_event(model_1, model)
+            cross_corr_s , cross_corr_index = f.Cross_correlation_sync_event(model_1, model)
             Inning_cross_corr_events.append(cross_corr_index)
 
             # Determine norm max moment index
-            max_normM_index = np.nanargmax([np.linalg.norm(seg_M_joint['forearm'][:, index]) for index in
-                                            range(len(seg_M_joint['forearm'][0, :]))])
+            max_normM_index = np.nanargmax([np.linalg.norm(seg_M_joint['forearm'][:, index]) for index in range(len(seg_M_joint['forearm'][0,:]))])
             Inning_max_normM_events.append(max_normM_index)
 
             # Determine max abduction moment [0] correlation index
-            max_M_index = np.nanargmax(seg_M_joint['forearm'][0, :])
+            max_M_index = np.nanargmax(seg_M_joint['forearm'][0,:])
             Inning_max_M_events.append(max_M_index)
 
             # Select which delay method to use for making variability graphs <--- Choose here!!!
@@ -198,7 +189,7 @@ for Inning in Innings:
             # sync_type = "norm Moment"
             # delay = max_normM_index - Inning_max_normM_events[0] # max norm moment
             sync_type = "abduction Moment"
-            delay = max_M_index - Inning_max_M_events[0]  # max moment
+            delay = max_M_index - Inning_max_M_events[0] # max moment
 
             # Visualisation of the global and local net moments
             synced_seg_M_joint = f.time_sync_moment_data(seg_M_joint, delay)
@@ -212,15 +203,12 @@ for Inning in Innings:
             """
 
             # Visualisation of the global and local net moments
-            f.plot_inning_segment_moments(synced_seg_M_joint, pitch_number, figure_number=2)
+            f.plot_inning_segment_moments(synced_seg_M_joint,pitch_number,figure_number = 2)
 
             # Max moment data for fatigue study
             for segment in segments:
-                Fatigue_dictionary[segment]['max_norm_moment'][pitch_number] = np.nanmax(
-                    [np.linalg.norm(seg_M_joint[segment][:, index]) for index in
-                     range(len(seg_M_joint[segment][0, :]))])
-                Fatigue_dictionary[segment]['max_abduction_moment'][pitch_number] = np.nanmax(
-                    [(seg_M_joint[segment][0, index]) for index in range(len(seg_M_joint[segment][0, :]))])
+                Fatigue_dictionary[segment]['max_norm_moment'][pitch_number] = np.nanmax([np.linalg.norm(seg_M_joint[segment][:, index]) for index in range(len(seg_M_joint[segment][0, :]))])
+                Fatigue_dictionary[segment]['max_abduction_moment'][pitch_number] = np.nanmax([(seg_M_joint[segment][0, index]) for index in range(len(seg_M_joint[segment][0, :]))])
 
             """
             Save the max moment data to results folder
@@ -268,3 +256,26 @@ Interpreting pitcher data
 #     plt.plot(rolling_var)
 #
 #     plt.show()
+mean_hand_length = np.nanmean(hand_length)
+print('hand length is')
+print(mean_hand_length)
+
+mean_forearm_length = np.nanmean(forearm_length)
+print('forearm length is')
+print(mean_forearm_length)
+
+mean_upperarm_length = np.nanmean(upperarm_length)
+print('upperarm length is')
+print(mean_upperarm_length)
+
+plt.figure()
+
+plt.subplot(3,1,1)
+plt.plot(hand_length)
+
+plt.subplot(3,1,2)
+plt.plot(forearm_length)
+
+plt.subplot(3,1,3)
+plt.plot(upperarm_length)
+plt.show()

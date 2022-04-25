@@ -38,7 +38,16 @@ if pitcher == ('PP09' or 'PP10' or 'PP11' or 'PP13'):
 else:
     side = 'right'
 
+forearm_length = []
+upperarm_length = []
+hand_length = []
+
+mean_hand_length = 13.591315171765809
+mean_forearm_length = 25.252098917741122
+mean_upperarm_length = 26.06705963822564
+
 for Inning in Innings:
+
     """
     Output setup
     """
@@ -99,19 +108,23 @@ for Inning in Innings:
         thorax_motion = f.calc_thorax(pitch['VU_Baseball_R_IJ'], pitch['VU_Baseball_R_PX'], pitch['VU_Baseball_R_C7'], pitch['VU_Baseball_R_T8'], gender='male',sample_freq=fs)
 
         # --- Upperarm Segment --- #
-        upperarm_motion = f.calc_upperarm(pitch['VU_Baseball_R_RLHE'], pitch['VU_Baseball_R_RMHE'], pitch['VU_Baseball_R_RAC'], side, gender='male',sample_freq=fs)
+        upperarm_motion = f.calc_upperarm(pitch['VU_Baseball_R_RLHE'], pitch['VU_Baseball_R_RMHE'], pitch['VU_Baseball_R_RAC'], side, gender='male',sample_freq=fs, mean_seg_length = mean_upperarm_length)
 
         # --- Forearm Segment --- #
-        forearm_motion = f.calc_forearm(pitch['VU_Baseball_R_RLHE'], pitch['VU_Baseball_R_RMHE'], pitch['VU_Baseball_R_RUS'], pitch['VU_Baseball_R_RRS'], side, gender='male',sample_freq=fs)
+        forearm_motion = f.calc_forearm(pitch['VU_Baseball_R_RLHE'], pitch['VU_Baseball_R_RMHE'], pitch['VU_Baseball_R_RUS'], pitch['VU_Baseball_R_RRS'], side, gender='male',sample_freq=fs, mean_seg_length= mean_forearm_length)
 
         # --- Hand Segment --- #
-        hand_motion = f.calc_hand(pitch['VU_Baseball_R_RUS'], pitch['VU_Baseball_R_RRS'], pitch['VU_Baseball_R_RHIP3'], side, gender='male',sample_freq=fs)
+        hand_motion = f.calc_hand(pitch['VU_Baseball_R_RUS'], pitch['VU_Baseball_R_RRS'], pitch['VU_Baseball_R_RHIP3'], side, gender='male',sample_freq=fs, mean_seg_length = mean_hand_length)
 
         # Combine all the referenced segment dictionaries into dictionary in order to loop through the keys for net force and moment calculations
         model = f.segments2combine(pelvis_motion, thorax_motion, upperarm_motion, forearm_motion, hand_motion)
 
         # Rearrange model to have the correct order of segments for 'top-down' method
         model = f.rearrange_model(model, 'top-down')
+
+        hand_length.append(model['hand']['seg_length'])
+        forearm_length.append(model['forearm']['seg_length'])
+        upperarm_length.append(model['upperarm']['seg_length'])
 
         if (j == 0):
             model_1 = copy.deepcopy(model)
@@ -227,10 +240,10 @@ for Inning in Innings:
     # print(Inning_max_normM_events)
     # print('M')
     # print(Inning_max_M_events)
-    plt.show()
-# """
-# Interpreting pitcher data
-# """
+plt.show()
+"""
+Interpreting pitcher data
+"""
 # for segment in segments:
 #     ser_segment = pd.Series(data = Fatigue_dictionary[segment]['max_abduction_moment'], index = Fatigue_dictionary[segment]['max_abduction_moment'].keys())
 #     rolling_var = ser_segment.rolling(10).var()
@@ -242,4 +255,27 @@ for Inning in Innings:
 #     plt.subplot(2,1,2)
 #     plt.plot(rolling_var)
 #
+#     plt.show()
+mean_hand_length = np.nanmean(hand_length)
+print('hand length is')
+print(mean_hand_length)
+
+mean_forearm_length = np.nanmean(forearm_length)
+print('forearm length is')
+print(mean_forearm_length)
+
+mean_upperarm_length = np.nanmean(upperarm_length)
+print('upperarm length is')
+print(mean_upperarm_length)
+
+plt.figure()
+
+plt.subplot(3,1,1)
+plt.plot(hand_length)
+
+plt.subplot(3,1,2)
+plt.plot(forearm_length)
+
+plt.subplot(3,1,3)
+plt.plot(upperarm_length)
 plt.show()

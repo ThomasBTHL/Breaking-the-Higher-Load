@@ -1740,7 +1740,7 @@ def calc_pelvis_without_RASIS(RSIAS, LSIAS, RSIPS, LSIPS, sample_freq=[], circum
     return dictionary
 
 
-def calc_upperarm(LHE, MHE, AC, side='right', sample_freq=[], circumference=29, gender='male'):
+def calc_upperarm(LHE, MHE, AC, side='right', sample_freq=[], circumference=29, gender='male', mean_seg_length = []):
     """ Calculates the local coordination system of the upperarm segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -1843,6 +1843,10 @@ def calc_upperarm(LHE, MHE, AC, side='right', sample_freq=[], circumference=29, 
         # Shoulder joint center to the elbow joint centers, female: 275.1, male: 281.7 (alternative length)
         seg_length = seg_length * (244.8 / 281.7) # zat = 244.8, leva =
 
+        if mean_seg_length:
+            seg_length = mean_seg_length
+
+
         # Regression parameters for inertial parameters calculations obtained from Zatsiorsky
         reg_parameters = np.transpose([9.67, 10.81, 2.06, 9.71])
 
@@ -1934,11 +1938,12 @@ def calc_upperarm(LHE, MHE, AC, side='right', sample_freq=[], circumference=29, 
     dictionary['segIzat'] = segIzat  # Local inertial tensor
     dictionary['JC'] = JC  # Shoulder and elbow joint center
     dictionary['Iprincipal'] = inertial_parameters[1:4]  # Principal moments of inertia
+    dictionary['seg_length'] = seg_length
 
     return dictionary
 
 
-def calc_forearm(LHE, MHE, US, RS, side='right', sample_freq=[], circumference=26, gender='male'):
+def calc_forearm(LHE, MHE, US, RS, side='right', sample_freq=[], circumference=26, gender='male', mean_seg_length = []):
     """ Calculates the local coordination system of the forearm segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -2034,6 +2039,9 @@ def calc_forearm(LHE, MHE, US, RS, side='right', sample_freq=[], circumference=2
         # Elbow joint center to the wrist joint center, female: 264.3, male: 268.9 (alternative length)
         seg_length = seg_length * (251.3 / 268.9)
 
+        if mean_seg_length:
+            seg_length = mean_seg_length
+
         # Regression parameters for inertial parameters calculations obtained from Zatsiorsky
         reg_parameters = np.array([6.26, 7.55, 1.51, 7.03])  # The lying vector notation is not problematic due to selection of individual scalars
 
@@ -2125,11 +2133,12 @@ def calc_forearm(LHE, MHE, US, RS, side='right', sample_freq=[], circumference=2
     dictionary['segIzat'] = segIzat  # Local inertial tensor
     dictionary['JC'] = JC  # Elbow and wrist joint center
     dictionary['Iprincipal'] = inertial_parameters[1:4]  # Principal moments of inertia
+    dictionary['seg_length'] = seg_length
 
     return dictionary
 
 
-def calc_hand(US, RS, MH3, side='right', sample_freq=[], circumference=21, gender='male'):
+def calc_hand(US, RS, MH3, side='right', sample_freq=[], circumference=21, gender='male', mean_seg_length = []):
     """ Calculates the local coordination system of the hand segment according to the ISB definition through
     bony land marks on a right-handed coordination system. The center of mass, center of mass origin, and
     inertial tensor are calculated according to the Zatsiorsky regression equations.
@@ -2226,6 +2235,9 @@ def calc_hand(US, RS, MH3, side='right', sample_freq=[], circumference=21, gende
         # Writs joint center to the third os metacarpalis, female: 74.74, male: 79.00 (alternative length)
         seg_length = seg_length * (189.9 / 79.00)
 
+        if mean_seg_length:
+            seg_length = mean_seg_length
+
         # Regression parameters for inertial parameters calculations obtained from Zatsiorsky
         reg_parameters = np.transpose([5.54, 6.65, 2.29, 4.86])
 
@@ -2321,6 +2333,7 @@ def calc_hand(US, RS, MH3, side='right', sample_freq=[], circumference=21, gende
     dictionary['segIzat'] = segIzat  # Local inertial tensor
     dictionary['JC'] = JC  # Wrist joint center
     dictionary['Iprincipal'] = inertial_parameters[1:4]  # Principal moments of inertia
+    dictionary['seg_length'] = seg_length
 
     return dictionary
 
