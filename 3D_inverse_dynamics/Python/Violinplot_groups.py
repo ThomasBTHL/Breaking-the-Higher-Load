@@ -50,6 +50,6 @@ for output in Outputs:
 
     ax = plt.figure()
 
-    plt.xlim(20,35)
-    ax = sns.violinplot(y="Group", x=output, data=df, inner='quartile', bw = 1)
-    ax = sns.swarmplot(y="Group", x=output, data=df, color=".3")
+    # plt.xlim(20,50)
+    ax = sns.violinplot(x="Group", y=output, data=df, inner='quartile', bw = 'scott') #bw = 1.059 for normal distribution
+    ax = sns.swarmplot(x="Group", y=output, data=df, color=".3")

@@ -37,10 +37,10 @@ for output in Outputs:
     g = sns.FacetGrid(df, row="Inning", hue="Inning", aspect=15, height=.5, palette=pal)
 
     # Draw the densities in a few steps
-    g.map(sns.stripplot, output, clip_on=False, color ="k", lw=2)
-    g.map(sns.kdeplot, output, bw_adjust=.5, clip_on=False, fill=True, alpha=1, linewidth=1.5)
-    g.map(sns.kdeplot, output, clip_on=False, color="w", lw=2, bw_adjust=.5)
-    g.map(sns.kdeplot, output, clip_on=False, color="k", lw=2, bw_adjust=1)
+    # g.map(sns.stripplot, output, clip_on=False, color ="k", lw=2)
+    g.map(sns.kdeplot, output, bw_adjust=1.059, clip_on=False, fill=True, alpha=1, linewidth=1.5)
+    g.map(sns.kdeplot, output, clip_on=False, color="w", lw=2, bw_adjust=1.059)
+    # g.map(sns.kdeplot, output, clip_on=False, color="k", lw=2, bw_adjust=1)
 
 
 
