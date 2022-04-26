@@ -6,9 +6,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 sns.set_theme(style="white", rc={"axes.facecolor": (0, 0, 0, 0)})
 
-pitcher = 'PP07'
-# Innings = ['Inning_1','Inning_2','Inning_3','Inning_4','Inning_5','Inning_6','Inning_7','Inning_8','Inning_9','Inning_10','Inning_11'] # Inning where you want to look, for pitches gives all pitches in inning
-Innings = ['Inning_1','Inning_2','Inning_3','Inning_4','Inning_5','Inning_6']
+pitcher = 'PP03'
+Innings = ['Inning_1','Inning_2','Inning_3','Inning_4','Inning_5','Inning_6','Inning_7','Inning_8','Inning_9','Inning_10','Inning_11'] # Inning where you want to look, for pitches gives all pitches in inning
+# Innings = ['Inning_1','Inning_2','Inning_3','Inning_4','Inning_5','Inning_6']
 
 Outputs = ['max_abduction_moment']
 
@@ -16,9 +16,9 @@ for output in Outputs:
     Max_moments = []
     for inning in Innings:
         # --- Define path where Results are stored --- #
-        path = 'E:/MSc/Thesis/Breaking the Higher Load/3D_inverse_dynamics/Python/Results/Pitches/Unfiltered/' + pitcher + '/' + inning + '/'
-        filename = "Max_norm_moments"
-        # filename = "Cumulative_til_this_point"
+        path = 'Results/Pitches/Unfiltered/' + pitcher + '/' + inning + '/'
+        # filename = "Max_norm_moments"
+        filename = "Cumulative_til_this_point"
 
         # --- Load data from pickle --- #
         filenameIn = path + filename
@@ -37,7 +37,7 @@ for output in Outputs:
     g = sns.FacetGrid(df, row="Inning", hue="Inning", aspect=15, height=.5, palette=pal)
 
     # Draw the densities in a few steps
-    # g.map(sns.stripplot, output, clip_on=False, color ="k", lw=2)
+    g.map(sns.stripplot, output, clip_on=False, color ="k", lw=2)
     g.map(sns.kdeplot, output, bw_adjust=.5, clip_on=False, fill=True, alpha=1, linewidth=1.5)
     g.map(sns.kdeplot, output, clip_on=False, color="w", lw=2, bw_adjust=.5)
     g.map(sns.kdeplot, output, clip_on=False, color="k", lw=2, bw_adjust=1)

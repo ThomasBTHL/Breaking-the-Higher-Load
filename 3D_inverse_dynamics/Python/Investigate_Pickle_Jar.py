@@ -14,7 +14,7 @@ Version 1.5 (2021-05-18)"""
 
 
 # --- Define path where EMG data is stored --- #
-path = "E:/MSc/Thesis/Breaking the Higher Load/3D_inverse_dynamics/Python/Results/Pitches/Unfiltered/PP01/Inning_4/"
+path = "Results/Pitches/Unfiltered/PP03/Inning_1/"
 filename = "Max_norm_moments"
 
 # --- Load data from pickle --- #
