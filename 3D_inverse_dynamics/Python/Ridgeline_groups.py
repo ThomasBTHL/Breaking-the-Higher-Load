@@ -41,6 +41,8 @@ for output in Outputs:
             i += 1
             group = 'group_' + str(i)
             groups.append(group)
+        if (len(all_data['forearm'][Outputs[0]]) - ((i-1) * n) < n/2):
+            break
 
     df = pd.DataFrame(Max_moments)
     df.columns = [output, 'Group']
@@ -51,15 +53,15 @@ for output in Outputs:
 
     # Draw the densities in a few steps
     # g.map(sns.stripplot, output, clip_on=False, color ="k", lw=2)
-    # g.map(sns.kdeplot, output, bw_adjust=.5, clip_on=False, fill=True, alpha=1, linewidth=1.5)
-    # g.map(sns.kdeplot, output, clip_on=False, color="w", lw=2, bw_adjust=.5)
-    
-    g.map(sns.kdeplot, output, clip_on=False, color="k", lw=2, bw_adjust=1)
+    g.map(sns.kdeplot, output, bw=.5, clip_on=False, fill=True, alpha=1, linewidth=1.5)
+    g.map(sns.kdeplot, output, clip_on=False, color="w", lw=2, bw=.5)
+
+    g.map(sns.kdeplot, output, clip_on=False, color="k", lw=2, bw=1)
 
 
 
     # passing color=None to refline() uses the hue mapping
-    g.refline(y=0, linewidth=.1, linestyle="-", color=None, clip_on=False)
+    g.refline(y=0, linewidth=1, linestyle="-", color=None, clip_on=False)
 
 
     # Define and use a simple function to label the plot in axes coordinates
@@ -70,7 +72,7 @@ for output in Outputs:
 
 
     g.map(label, output)
-    g.set(xlim=(0, 60))
+    g.set(xlim=(20, 35))
 
     # Set the subplots to overlap
     g.figure.subplots_adjust(hspace=-.25)

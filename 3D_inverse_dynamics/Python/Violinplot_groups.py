@@ -14,9 +14,9 @@ Contact E-Mail: Thom.hogerwou@gmail.com
 Version 1 (2022-04-26)
 """
 
-pitcher = "PP07"
-last_inning = 'Inning_6'  # last inning of data available for pitcher. cumulative innings already contain all other data
-n = 15
+pitcher = "PP03"
+last_inning = 'Inning_11'  # last inning of data available for pitcher. cumulative innings already contain all other data
+n = 25
 
 # --- Define path where dictonary data is stored --- #
 path = "Results/Pitches/Unfiltered/" + pitcher + "/" + last_inning + "/"
@@ -48,5 +48,8 @@ for output in Outputs:
     df = pd.DataFrame(Max_moments)
     df.columns = [output, 'Group']
 
-    ax = sns.violinplot(x="Group", y=output, data=df, inner='quartile', bw = 1,cut = 2)
-    ax = sns.swarmplot(x="Group", y=output, data=df, color=".3")
+    ax = plt.figure()
+
+    plt.xlim(20,35)
+    ax = sns.violinplot(y="Group", x=output, data=df, inner='quartile', bw = 1)
+    ax = sns.swarmplot(y="Group", x=output, data=df, color=".3")
