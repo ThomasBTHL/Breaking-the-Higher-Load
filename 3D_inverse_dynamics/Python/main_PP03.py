@@ -254,8 +254,7 @@ Interpreting pitcher data
 #
 #     plt.subplot(2,1,2)
 #     plt.plot(rolling_var)
-#
-#     plt.show()
+
 mean_hand_length = np.nanmean(hand_length)
 print('hand length is')
 print(mean_hand_length)

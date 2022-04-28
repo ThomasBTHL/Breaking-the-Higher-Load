@@ -23,18 +23,18 @@ Version 1.5 (2020-07-15)"""
 """
 Input area
 """
-pitchers = ['PP01','PP02','PP03','PP04','PP05','PP06','PP07','PP08','PP12','PP14','PP15'] #PP01 - PP15
+pitchers = ['PP01']#,'PP02','PP03','PP04','PP05','PP06','PP07','PP08','PP12','PP14','PP15'] #PP01 - PP15
 length = 'Pitches' # Pitches or Innings
 filter_state = 'Unfiltered' # Unfiltered or Filtered
-Cumulative_inning_state = False
+Cumulative_inning_state = True
 
 for pitcher in pitchers:
     """
     individual pitcher information
     """
     if pitcher == 'PP01':
-        Innings = ['Inning_1','Inning_2','Inning_3','Inning_4','Inning_5','Inning_6','Inning_7','Inning_8'] # Inning where you want to look, for pitches gives all pitches in inning
-        problem_pitches = [6,11,17,22,27,30,31,32,33,34,35,36,37,38,39,40,41,42,51,58,64,78,79] # pitches to remove
+        Innings = ['Inning_1','Inning_2','Inning_3','Inning_5','Inning_6','Inning_7','Inning_8'] # Inning where you want to look, for pitches gives all pitches in inning
+        problem_pitches = [6, 11, 17, 22, 27, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 51, 58, 59, 62, 64, 78, 79]  # pitches to remove
         mean_hand_length = 13.591315171765809
         mean_forearm_length = 25.252098917741122
         mean_upperarm_length = 26.06705963822564
@@ -91,25 +91,22 @@ for pitcher in pitchers:
         mean_hand_length = 19.558310090270854
 
     if pitcher == 'PP09':
-        Innings = ['Inning_1', 'Inning_2', 'Inning_3', 'Inning_4', 'Inning_5',
-                   'Inning_6']  # Inning where you want to look, for pitches gives all pitches in inning
-        problem_pitches = [45]  # pitches to remove
+        Innings = []  # Inning where you want to look, for pitches gives all pitches in inning
+        problem_pitches = []  # pitches to remove
         mean_forearm_length = []
         mean_upperarm_length = []
         mean_hand_length = []
 
     if pitcher == 'PP10':
-        Innings = ['Inning_1', 'Inning_2', 'Inning_3', 'Inning_4', 'Inning_5',
-                   'Inning_6']  # Inning where you want to look, for pitches gives all pitches in inning
-        problem_pitches = [45]  # pitches to remove
+        Innings = []  # Inning where you want to look, for pitches gives all pitches in inning
+        problem_pitches = []  # pitches to remove
         mean_forearm_length = []
         mean_upperarm_length = []
         mean_hand_length = []
 
     if pitcher == 'PP11':
-        Innings = ['Inning_1', 'Inning_2', 'Inning_3', 'Inning_4', 'Inning_5',
-                   'Inning_6']  # Inning where you want to look, for pitches gives all pitches in inning
-        problem_pitches = [45]  # pitches to remove
+        Innings = []  # Inning where you want to look, for pitches gives all pitches in inning
+        problem_pitches = []  # pitches to remove
         mean_forearm_length = []
         mean_upperarm_length = []
         mean_hand_length = []
@@ -123,9 +120,8 @@ for pitcher in pitchers:
         mean_hand_length = 21.201363791024246
 
     if pitcher == 'PP13':
-        Innings = ['Inning_1', 'Inning_2', 'Inning_3', 'Inning_4', 'Inning_5',
-                   'Inning_6']  # Inning where you want to look, for pitches gives all pitches in inning
-        problem_pitches = [45]  # pitches to remove
+        Innings = []  # Inning where you want to look, for pitches gives all pitches in inning
+        problem_pitches = []  # pitches to remove
         mean_forearm_length = []
         mean_upperarm_length = []
         mean_hand_length = []

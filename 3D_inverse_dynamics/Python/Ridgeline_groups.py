@@ -13,9 +13,9 @@ Contact E-Mail: Thom.hogerwou@gmail.com
 Version 1 (2022-04-26)
 """
 
-pitcher = "PP03"
-last_inning = 'Inning_11' # last inning of data available for pitcher. cumulative innings already contain all other data
-n = 25
+pitcher = "PP01"
+last_inning = 'Inning_8' # last inning of data available for pitcher. cumulative innings already contain all other data
+n = 20
 
 # --- Define path where dictonary data is stored --- #
 path = "Results/Pitches/Unfiltered/" + pitcher + "/" + last_inning + "/"
@@ -72,7 +72,6 @@ for output in Outputs:
 
 
     g.map(label, output)
-    g.set(xlim=(20, 35))
 
     # Set the subplots to overlap
     g.figure.subplots_adjust(hspace=-.25)
@@ -81,3 +80,12 @@ for output in Outputs:
     g.set_titles("")
     g.set(yticks=[], ylabel="")
     g.despine(bottom=True, left=True)
+    g.axes[1,0].set_ylabel('Cumulative Innings')
+    g.fig.suptitle(pitcher +' Maximum Elbow Abduction Moment Density Plot')
+    g.axes[-1,0].set_xlabel('Maximum Moment [Nm]')
+
+    """
+    Save the figures to results folder
+    """
+    g.figure.savefig("Results/Ridgelines/Unfiltered/Cumulative"+pitcher)
+    print('Figures have been saved.')

@@ -20,7 +20,7 @@ Logbook:
 Version 1.0 (2022-03-18)
 """
 
-subject_name = "PP14"
+subject_name = "PP03"
 
 # Filter parameters
 cutoff = 25
@@ -103,19 +103,4 @@ for Innings in markers_c3d:
     outfile.close()
     print('Unfiltered pitches have been saved.')
 
-    """
-    3.4) Cut filtered data and save
-    """
-
-    #markers_cut_filtered = cut_markers(Filtered_inning,ball_pickups)  # Outputs dictionary of dictionaries contatining individual pitches, length = ballpickups + 1
-    #markers_trimmed_filtered = trim_markers(markers_cut_filtered, fs, lead = .2, lag = .4)
-    #visual_check_markers('VU_Baseball_R_RUS', 'VU_Baseball_R_RRS', 'VU_Baseball_R_RMHE', 'VU_Baseball_R_RLHE', markers_trimmed_filtered['pitch_1'])
-    # Path where the pickle will be saved. Last part will be the name of the file
-    #filename = 'data/Pitches/Filtered/' + subject_name + '/' + inning_name
-    # Initialize the pickle jar file
-    #outfile = open(filename, 'wb')
-    # Write the dictionary into the binary file
-    #pickle.dump(markers_trimmed_filtered, outfile)
-    #outfile.close()
-    #print('Filtered pitches have been saved as pickle')
     inning_number = inning_number + 1

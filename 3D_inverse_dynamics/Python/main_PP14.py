@@ -29,7 +29,9 @@ pitcher = 'PP14' #PP01 - PP15
 Innings = ['Inning_1','Inning_2','Inning_3','Inning_4','Inning_5','Inning_6','Inning_7','Inning_8'] # Inning where you want to look, for pitches gives all pitches in inning
 
 fs = 120
-problem_pitches = [2,3,4,5,6,7,8,9,10,13,14,15,16,17,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,63,67,71,76] # pitches to remove
+# problem_pitches = [2,3,4,5,6,7,8,9,10,13,14,15,16,17,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,63,67,71,76] # pitches to remove
+problem_pitches = [] # pitches to remove
+
 
 # Selection based on right or left-handed pitchers
 if pitcher == ('PP09' or 'PP10' or 'PP11' or 'PP13'):
@@ -122,9 +124,9 @@ for Inning in Innings:
         # Rearrange model to have the correct order of segments for 'top-down' method
         model = f.rearrange_model(model, 'top-down')
 
-        hand_length.append(model['hand']['seg_length'])
-        forearm_length.append(model['forearm']['seg_length'])
-        upperarm_length.append(model['upperarm']['seg_length'])
+        # hand_length.append(model['hand']['seg_length'])
+        # forearm_length.append(model['forearm']['seg_length'])
+        # upperarm_length.append(model['upperarm']['seg_length'])
 
         if (j == 0):
             model_1 = copy.deepcopy(model)
@@ -240,7 +242,7 @@ for Inning in Innings:
     # print(Inning_max_normM_events)
     # print('M')
     # print(Inning_max_M_events)
-plt.show()
+    plt.show()
 """
 Interpreting pitcher data
 """

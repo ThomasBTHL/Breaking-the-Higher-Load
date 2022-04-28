@@ -14,9 +14,9 @@ Contact E-Mail: Thom.hogerwou@gmail.com
 Version 1 (2022-04-26)
 """
 
-pitcher = "PP03"
+pitcher = "PP15"
 last_inning = 'Inning_11'  # last inning of data available for pitcher. cumulative innings already contain all other data
-n = 25
+n = 20
 
 # --- Define path where dictonary data is stored --- #
 path = "Results/Pitches/Unfiltered/" + pitcher + "/" + last_inning + "/"
@@ -48,8 +48,13 @@ for output in Outputs:
     df = pd.DataFrame(Max_moments)
     df.columns = [output, 'Group']
 
-    ax = plt.figure()
+    ax = plt.figure(figsize=[8,5])
 
-    # plt.xlim(20,50)
-    ax = sns.violinplot(x="Group", y=output, data=df, inner='quartile', bw = 'scott') #bw = 1.059 for normal distribution
-    ax = sns.swarmplot(x="Group", y=output, data=df, color=".3")
+    # plt.xlim(10,50)
+    ax = sns.violinplot(y="Group", x=output, data=df, inner='quartile', bw = 'scott') #bw = 1.059 for normal distribution
+    ax = sns.swarmplot(y="Group", x=output, data=df, color=".3")
+
+    plt.ylabel('Groups of '+str(n)+' pitches')
+    plt.xlabel('Maximum Moment [Nm]')
+    plt.title(pitcher + ' Maximum Elbow Abduction Moment Violin Plot')
+    plt.savefig("Results/Violin/Unfiltered/"+pitcher)
