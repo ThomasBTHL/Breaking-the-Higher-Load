@@ -14,8 +14,8 @@ Version 1.5 (2021-05-18)"""
 
 
 # --- Define path where EMG data is stored --- #
-path = "Results/Pitches/Unfiltered/PP03/Inning_1/"
-filename = "Max_norm_moments"
+path = "Results/Pitches/Unfiltered/PP03/Inning_11/"
+filename = "Cumulative_til_this_point"
 
 # --- Load data from pickle --- #
 filenameIn = path + filename

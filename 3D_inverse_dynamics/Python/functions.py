@@ -24,6 +24,8 @@ import xlrd
 import c3d
 import os
 import re
+import pickle
+import openpyxl
 
 # Print Message After Packages Imported Successfully
 print("Import of Packages Successful!")
@@ -3585,3 +3587,137 @@ def calc_variability_seg_M_joint(Inning_seg_M_joint):
         Inning_mean_neg_var_seg_M_joint[segment] = seg_mean - seg_var
 
     return Inning_mean_seg_M_joint, Inning_var_seg_M_joint, Inning_mean_pos_var_seg_M_joint, Inning_mean_neg_var_seg_M_joint
+
+def Add_velocity_to_output(pitcher, inning, Fatigue_dictionary = []):
+    """Adds velocity pitch data from an excel to a dictionary
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-25)
+
+       Arguments:
+            pitcher:
+            inning:
+       Returns:
+           Output: Dictionary containing added data
+    """
+    data_key = 'Ball Speed'
+    """
+    Results Dictionary
+    """
+
+    if Fatigue_dictionary:
+        Output_Dictionary = Fatigue_dictionary
+    else:
+        path = 'Results/Pitches/Unfiltered/' + pitcher + '/' + inning + '/'
+        # --- Load data from pickle --- #
+        filenameIn = path + 'Max_norm_moments'
+        infile = open(filenameIn, 'rb')
+        Output_Dictionary = pickle.load(infile)
+        infile.close()
+
+    """
+    xlsx data
+    """
+    filename = "data/21_03_22_Overview UCL variability fatigue_graphs_BvT(1).xlsx"
+    xlsx_data = openpyxl.load_workbook(filename=filename,data_only=True)
+
+    df = pd.DataFrame(xlsx_data[pitcher].values) # make it a df
+
+
+    segments = Output_Dictionary.keys()
+
+
+    for segment in segments:
+        Output_Dictionary[segment][data_key] = dict()
+        for pitch in Output_Dictionary[segment]['max_abduction_moment']:
+            xlsx_pitches = df[0].squeeze()
+            rows = xlsx_pitches.str.find(pitch,end = len(pitch))
+            for i in range(len(rows)):
+                if rows[i] == 0:
+                    row = i
+                    break
+            new_pitch_data = df[1][row]#grab from excel data
+            Output_Dictionary[segment][data_key][pitch] = new_pitch_data
+
+    return Output_Dictionary
+
+def Add_fatigue_to_output(pitcher, inning, Fatigue_dictionary = []):
+    """Adds velocity pitch data from an excel to a dictionary
+
+       Function is developed and written by Thomas van Hogerwou, master student TU-Delft
+       Contact E-Mail: T.C.vanHogerwou@student.tudelft.nl
+
+       Version 1.0 (2022-03-25)
+
+       Arguments:
+            pitcher:
+            inning:
+       Returns:
+           Output: Dictionary containing added data
+    """
+    data_key = 'Fatigue Reports'
+    """
+    Results Dictionary
+    """
+
+    if Fatigue_dictionary:
+        Output_Dictionary = Fatigue_dictionary
+    else:
+        path = 'Results/Pitches/Unfiltered/' + pitcher + '/' + inning + '/'
+        # --- Load data from pickle --- #
+        filenameIn = path + 'Outputs'
+        infile = open(filenameIn, 'rb')
+        Output_Dictionary = pickle.load(infile)
+        infile.close()
+
+    """
+    xlsx data
+    """
+    filename = "data/21_03_22_Overview UCL variability fatigue_graphs_BvT(1).xlsx"
+    xlsx_data = openpyxl.load_workbook(filename=filename,data_only=True)
+
+    df = pd.DataFrame(xlsx_data['VAS-scale'].values) # make it a df
+
+    """"
+    Find correct col
+    """
+    for j in range(20):
+        if df[j][0] == pitcher:
+            break
+
+    segments = Output_Dictionary.keys()
+    for segment in segments:
+        Output_Dictionary[segment][data_key] = dict()
+        Output_Dictionary[segment][data_key]['VAS-Scale 1 (Before US measurements)'] = df[j][1]
+        Output_Dictionary[segment][data_key]['VAS-Scale 2 (Start pitching)'] = df[j][2]
+
+        for pitch in Output_Dictionary[segment]['max_abduction_moment']:
+            if pitch in ['pitch_1','pitch_2','pitch_3','pitch_4','pitch_5','pitch_6','pitch_7','pitch_8','pitch_9','pitch_10']:
+                row = 3
+            if pitch in ['pitch_11','pitch_12','pitch_13','pitch_14','pitch_15','pitch_16','pitch_17','pitch_18','pitch_19','pitch_20']:
+                row = 4
+            if pitch in ['pitch_21','pitch_22','pitch_23','pitch_24','pitch_25','pitch_26','pitch_27','pitch_28','pitch_29','pitch_30']:
+                row = 5
+            if pitch in ['pitch_31','pitch_32','pitch_33','pitch_34','pitch_35','pitch_36','pitch_37','pitch_38','pitch_39','pitch_40']:
+                row = 6
+            if pitch in ['pitch_41','pitch_42','pitch_43','pitch_44','pitch_45','pitch_46','pitch_47','pitch_48','pitch_49','pitch_50']:
+                row = 7
+            if pitch in ['pitch_51','pitch_52','pitch_53','pitch_54','pitch_55','pitch_56','pitch_57','pitch_58','pitch_59','pitch_60']:
+                row = 8
+            if pitch in ['pitch_61','pitch_62','pitch_63','pitch_64','pitch_65','pitch_66','pitch_67','pitch_68','pitch_69','pitch_70']:
+                row = 9
+            if pitch in ['pitch_71','pitch_72','pitch_73','pitch_74','pitch_75','pitch_76','pitch_77','pitch_78','pitch_79','pitch_80']:
+                row = 10
+            if pitch in ['pitch_81','pitch_82','pitch_83','pitch_84','pitch_85','pitch_86','pitch_87','pitch_88','pitch_89','pitch_90']:
+                row = 11
+            if pitch in ['pitch_91','pitch_92','pitch_93','pitch_94','pitch_95','pitch_96','pitch_97','pitch_98','pitch_99','pitch_100']:
+                row = 12
+            if pitch in ['pitch_101','pitch_102','pitch_103','pitch_104','pitch_105','pitch_106','pitch_107','pitch_108','pitch_109','pitch_110']:
+                row = 13
+
+            new_pitch_data = df[j][row]
+            Output_Dictionary[segment][data_key][pitch] = new_pitch_data
+
+    return Output_Dictionary

@@ -23,7 +23,7 @@ Version 1.5 (2020-07-15)"""
 """
 Input area
 """
-pitchers = ['PP01']#,'PP02','PP03','PP04','PP05','PP06','PP07','PP08','PP12','PP14','PP15'] #PP01 - PP15
+pitchers = ['PP01','PP02','PP03','PP04','PP05','PP06','PP07','PP08','PP12','PP14','PP15'] #PP01 - PP15
 length = 'Pitches' # Pitches or Innings
 filter_state = 'Unfiltered' # Unfiltered or Filtered
 Cumulative_inning_state = True
@@ -127,12 +127,12 @@ for pitcher in pitchers:
         mean_hand_length = []
 
     if pitcher == 'PP14':
-        Innings = ['Inning_1', 'Inning_2', 'Inning_3', 'Inning_4', 'Inning_5',
+        Innings = ['Inning_1', 'Inning_2', 'Inning_5',
                    'Inning_6','Inning_7','Inning_8']  # Inning where you want to look, for pitches gives all pitches in inning
         problem_pitches = [2,3,4,5,6,7,8,9,10,13,14,15,16,17,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,63,67,71,76]  # pitches to remove
-        forearm_length = 25.57505164468459
-        upperarm_length = 27.10506628400707
-        hand_length = 18.1430265386685
+        mean_forearm_length = 25.57505164468459
+        mean_upperarm_length = 27.10506628400707
+        mean_hand_length = 18.1430265386685
 
     if pitcher == 'PP15':
         Innings = ['Inning_1','Inning_2','Inning_3','Inning_4','Inning_5','Inning_6','Inning_7','Inning_8','Inning_9','Inning_10','Inning_11']  # Inning where you want to look, for pitches gives all pitches in inning
@@ -325,29 +325,35 @@ for pitcher in pitchers:
                     Fatigue_dictionary[segment]['max_norm_moment'][pitch_number] = np.nanmax([np.linalg.norm(seg_M_joint[segment][:, index]) for index in range(len(seg_M_joint[segment][0, :]))])
                     Fatigue_dictionary[segment]['max_abduction_moment'][pitch_number] = np.nanmax([(seg_M_joint[segment][0, index]) for index in range(len(seg_M_joint[segment][0, :]))])
 
-                """
-                Save the max moment data to results folder
-                """
-                if Cumulative_inning_state == False:
-                # Path where the pickle will be saved. Last part will be the name of the file
-                    filename = 'Results/Pitches/Unfiltered/' + pitcher + '/' + Inning + '/' + 'Max_norm_moments'
-                    # Initialize the pickle file
-                    outfile = open(filename, 'wb')
-                    # Write the dictionary into the binary file
-                    pickle.dump(Fatigue_dictionary, outfile)
-                    outfile.close()
-                    print('Fatigue dictionary has been saved.')
+        # Add velocity data to Fatigue dictionaries
+        Fatigue_dictionary = f.Add_velocity_to_output(pitcher, Inning, Fatigue_dictionary)
 
-                """
-                Save cumulative report
-                """
-                if Cumulative_inning_state == True:
-                    # Path where the pickle will be saved. Last part will be the name of the file
-                    filename = 'Results/Pitches/Unfiltered/' + pitcher + '/' + Inning + '/' + 'Cumulative_til_this_point'
-                    # Initialize the pickle file
-                    outfile = open(filename, 'wb')
-                    # Write the dictionary into the binary file
-                    pickle.dump(Fatigue_dictionary, outfile)
-                    outfile.close()
-                    print('Fatigue dictionary has been saved.')
-plt.show()
+        # Add fatigue data to Fatigue dictionaries
+        Fatigue_dictionary = f.Add_fatigue_to_output(pitcher, Inning, Fatigue_dictionary)
+
+        """
+        Save the max moment data to results folder
+        """
+        if Cumulative_inning_state == False:
+        # Path where the pickle will be saved. Last part will be the name of the file
+            filename = 'Results/Pitches/Unfiltered/' + pitcher + '/' + Inning + '/' + 'Outputs'
+            # Initialize the pickle file
+            outfile = open(filename, 'wb')
+            # Write the dictionary into the binary file
+            pickle.dump(Fatigue_dictionary, outfile)
+            outfile.close()
+            print('Fatigue dictionary has been saved.')
+
+        """
+        Save cumulative report
+        """
+        if Cumulative_inning_state == True:
+            # Path where the pickle will be saved. Last part will be the name of the file
+            filename = 'Results/Pitches/Unfiltered/' + pitcher + '/' + Inning + '/' + 'Cumulative_til_this_point'
+            # Initialize the pickle file
+            outfile = open(filename, 'wb')
+            # Write the dictionary into the binary file
+            pickle.dump(Fatigue_dictionary, outfile)
+            outfile.close()
+            print('Fatigue dictionary has been saved.')
+# plt.show()
