@@ -10,6 +10,7 @@ ax = plt.figure(figsize=[8, 5])
 # 'Ball Speed', 'max_abduction_moment'
 Outputs = ['Fatigue Reports', 'Ball Speed']
 Pitchers = ['PP01','PP02','PP03','PP04','PP05','PP07','PP08','PP14','PP15']
+filter_state = 'Filtered'
 # Pitchers = ['PP01','PP02']
 
 k = 0
@@ -72,7 +73,7 @@ for pitcher in Pitchers:
     Plotted_data = []
 
     # --- Define path where Results are stored --- #
-    path = 'Results/Pitches/Unfiltered/' + pitcher + '/' + Last_inning + '/'
+    path = 'Results/Pitches/' + filter_state +'/' + pitcher + '/' + Last_inning + '/'
     filename = "Cumulative_til_this_point"
 
     # --- Load data from pickle --- #
