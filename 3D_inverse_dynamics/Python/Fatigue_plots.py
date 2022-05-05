@@ -5,11 +5,14 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 sns.set_theme(style="white", rc={"axes.facecolor": (0, 0, 0, 0)})
-
-Outputs = ['Fatigue Reports', 'max_abduction_moment']
-Pitchers = ['PP01','PP02','PP03','PP04','PP05','PP06','PP07','PP08','PP12','PP14','PP15']
-
+colors = sns.color_palette()
 ax = plt.figure(figsize=[8, 5])
+# 'Ball Speed', 'max_abduction_moment'
+Outputs = ['Fatigue Reports', 'Ball Speed']
+Pitchers = ['PP01','PP02','PP03','PP04','PP05','PP07','PP08','PP14','PP15']
+# Pitchers = ['PP01','PP02']
+
+k = 0
 for pitcher in Pitchers:
     """
     individual pitcher information
@@ -87,8 +90,18 @@ for pitcher in Pitchers:
 
 
     # ax = sns.violinplot(y="Inning", x=output, data=df, inner='quartile', bw = 'scott') #bw = 1.059 for normal distribution
-    ax = plt.scatter(df[Outputs[0]],df[Outputs[1]],label = pitcher)
-    plt.legend()
+    ax = plt.scatter(df[Outputs[0]],df[Outputs[1]],label = pitcher, color = colors[k])
+    # df[Outputs[0]] = [(df[Outputs[0]][l] + 0.001 *np.random.rand()) for l in range(len(df[Outputs[0]]))] # adds a tiny bit of noise
+    df = df.sort_values(Outputs[0])
 
+    z = np.polyfit(df[Outputs[0]], df[Outputs[1]], 1)
+    y_hat = np.poly1d(z)(df[Outputs[0]])
+
+    plt.plot(df[Outputs[0]], y_hat, lw=2, color = colors[k])
+    plt.legend(facecolor = 'white')
     plt.ylabel(Outputs[1])
     plt.xlabel(Outputs[0])
+
+    k += 1
+
+plt.show()
