@@ -8,7 +8,7 @@ sns.set_theme(style="white", rc={"axes.facecolor": (0, 0, 0, 0)})
 colors = sns.color_palette()
 ax = plt.figure(figsize=[8, 5])
 # 'Ball Speed', 'max_abduction_moment'
-Outputs = ['Fatigue Reports', 'Ball Speed']
+Outputs = ['Fatigue Reports', 'max_abduction_moment']
 Pitchers = ['PP01','PP02','PP03','PP04','PP05','PP07','PP08','PP14','PP15']
 filter_state = 'Filtered'
 # Pitchers = ['PP01','PP02']

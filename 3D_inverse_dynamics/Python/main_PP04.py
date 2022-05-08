@@ -240,7 +240,7 @@ for Inning in Innings:
     # print(Inning_max_normM_events)
     # print('M')
     # print(Inning_max_M_events)
-plt.show()
+    plt.show()
 """
 Interpreting pitcher data
 """
