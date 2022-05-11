@@ -25,8 +25,8 @@ Input area
 """
 pitchers = ['PP01','PP02','PP03','PP04','PP05','PP06','PP07','PP08','PP12','PP14','PP15'] #PP01 - PP15\
 length = 'Pitches' # Pitches or Innings
-filter_state = 'UnFiltered' # Unfiltered or Filtered
-Cumulative_inning_state = False
+filter_state = 'Filtered' # Unfiltered or Filtered
+Cumulative_inning_state = True
 
 for pitcher in pitchers:
     """

@@ -3746,12 +3746,13 @@ def max_moment_data(Fatigue_dictionary, seg_M_joint, segments, pitch_number, Pol
         for segment in segments:
             seg_index = np.nanargmax([(seg_M_joint[segment][0, index]) for index in range(len(seg_M_joint[segment][0, :]))])
             # --- Select window based on found indices for each segment --- #
-            seg_window = np.linspace(seg_index - 3, seg_index + 3, ((seg_index + 3) - (seg_index - 3) + 1), endpoint=True).astype(int)
+            seg_window = np.linspace(seg_index - 2, seg_index + 2, ((seg_index + 2) - (seg_index - 2) + 1), endpoint=True).astype(int)
             # --- Calculate the 2nd order polynomial function coefficients for each segment --- #
             seg_fit = np.polyfit(seg_window, seg_M_joint[segment][0,seg_window], 2)
             # --- Analytical calculation of the exact point in time of the occurrence of the peak angular velocity for each segment --- #
             seg_analytical_time = -(seg_fit[1] / (2 * seg_fit[0]))
 
-            Fatigue_dictionary[segment]['max_abduction_moment'][pitch_number] = np.poly1d(seg_fit)(seg_analytical_time)
+            if seg_analytical_time > 0:
+                Fatigue_dictionary[segment]['max_abduction_moment'][pitch_number] = np.poly1d(seg_fit)(seg_analytical_time)
 
     return Fatigue_dictionary
