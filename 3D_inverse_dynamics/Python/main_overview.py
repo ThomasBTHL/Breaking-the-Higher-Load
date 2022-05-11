@@ -23,10 +23,10 @@ Version 1.5 (2020-07-15)"""
 """
 Input area
 """
-pitchers = ['PP01','PP02','PP03','PP04','PP05','PP06','PP07','PP08','PP12','PP14','PP15'] #PP01 - PP15
+pitchers = ['PP01','PP02','PP03','PP04','PP05','PP06','PP07','PP08','PP12','PP14','PP15'] #PP01 - PP15\
 length = 'Pitches' # Pitches or Innings
-filter_state = 'Unfiltered' # Unfiltered or Filtered
-Cumulative_inning_state = True
+filter_state = 'UnFiltered' # Unfiltered or Filtered
+Cumulative_inning_state = False
 
 for pitcher in pitchers:
     """
@@ -129,7 +129,7 @@ for pitcher in pitchers:
     if pitcher == 'PP14':
         Innings = ['Inning_1', 'Inning_2', 'Inning_5',
                    'Inning_6','Inning_7','Inning_8']  # Inning where you want to look, for pitches gives all pitches in inning
-        problem_pitches = [2,3,4,5,6,7,8,9,10,13,14,15,16,17,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,63,67,71,76]  # pitches to remove
+        problem_pitches = [2,3,4,5,6,7,8,9,10,13,14,15,16,17,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,46,63,67,71,76]  # pitches to remove
         mean_forearm_length = 25.57505164468459
         mean_upperarm_length = 27.10506628400707
         mean_hand_length = 18.1430265386685
@@ -192,7 +192,7 @@ for pitcher in pitchers:
         Load inning data and remove unwanted pitches
         """
         # Path where the pitching dictionary is saved
-        filename = 'data' + '/' + length + '/' + filter_state + '/' + pitcher + '/' + Inning
+        filename = 'data' + '/' + length + '/' + 'Unfiltered' + '/' + pitcher + '/' + Inning
 
         # Read the dictionary as a new variable
         infile = open(filename, 'rb')
@@ -320,10 +320,13 @@ for pitcher in pitchers:
                 # Visualisation of the global and local net moments
                 f.plot_inning_segment_moments(synced_seg_M_joint,pitch_number,figure_number = 2)
 
+                if filter_state == 'Filtered':
+                    Polyfit = 1
+                else:
+                    Polyfit = 0
+
                 # Max moment data for fatigue study
-                for segment in segments:
-                    Fatigue_dictionary[segment]['max_norm_moment'][pitch_number] = np.nanmax([np.linalg.norm(seg_M_joint[segment][:, index]) for index in range(len(seg_M_joint[segment][0, :]))])
-                    Fatigue_dictionary[segment]['max_abduction_moment'][pitch_number] = np.nanmax([(seg_M_joint[segment][0, index]) for index in range(len(seg_M_joint[segment][0, :]))])
+                Fatigue_dictionary = f.max_moment_data(Fatigue_dictionary, seg_M_joint, segments, pitch_number, Polyfit)
 
         # Add velocity data to Fatigue dictionaries
         Fatigue_dictionary = f.Add_velocity_to_output(pitcher, Inning, Fatigue_dictionary)
@@ -336,7 +339,7 @@ for pitcher in pitchers:
         """
         if Cumulative_inning_state == False:
         # Path where the pickle will be saved. Last part will be the name of the file
-            filename = 'Results/Pitches/Unfiltered/' + pitcher + '/' + Inning + '/' + 'Outputs'
+            filename = 'Results/Pitches/'+filter_state+'/' + pitcher + '/' + Inning + '/' + 'Outputs'
             # Initialize the pickle file
             outfile = open(filename, 'wb')
             # Write the dictionary into the binary file
@@ -349,11 +352,10 @@ for pitcher in pitchers:
         """
         if Cumulative_inning_state == True:
             # Path where the pickle will be saved. Last part will be the name of the file
-            filename = 'Results/Pitches/Unfiltered/' + pitcher + '/' + Inning + '/' + 'Cumulative_til_this_point'
+            filename = 'Results/Pitches/'+filter_state+'/' + pitcher + '/' + Inning + '/' + 'Cumulative_til_this_point'
             # Initialize the pickle file
             outfile = open(filename, 'wb')
             # Write the dictionary into the binary file
             pickle.dump(Fatigue_dictionary, outfile)
             outfile.close()
             print('Fatigue dictionary has been saved.')
-# plt.show()
