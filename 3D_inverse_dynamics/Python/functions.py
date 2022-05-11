@@ -3493,7 +3493,7 @@ def time_sync_moment_data(data, lag):
         if lag < 0:
             for axis in range(len(data['forearm'])):
                 for i in range(0, (-1 * lag)):
-                    synced_data[segment][axis][i] = 'NaN' # remove the [-i] loop around python does, replace with nans
+                    synced_data[segment][axis][i] = np.nan # remove the [-i] loop around python does, replace with nans
 
     return synced_data
 

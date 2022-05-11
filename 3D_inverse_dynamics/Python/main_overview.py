@@ -23,10 +23,11 @@ Version 1.5 (2020-07-15)"""
 """
 Input area
 """
-pitchers = ['PP01','PP02','PP03','PP04','PP05','PP06','PP07','PP08','PP12','PP14','PP15'] #PP01 - PP15\
+# pitchers = ['PP01','PP02','PP03','PP04','PP05','PP06','PP07','PP08','PP12','PP14','PP15'] #PP01 - PP15\
+pitchers = ['PP15']
 length = 'Pitches' # Pitches or Innings
 filter_state = 'Filtered' # Unfiltered or Filtered
-Cumulative_inning_state = True
+Cumulative_inning_state = False
 
 for pitcher in pitchers:
     """
