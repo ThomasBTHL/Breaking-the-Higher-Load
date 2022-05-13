@@ -23,11 +23,9 @@ Version 1.5 (2020-07-15)"""
 """
 Input area
 """
-# pitchers = ['PP01','PP02','PP03','PP04','PP05','PP06','PP07','PP08','PP12','PP14','PP15'] #PP01 - PP15\
-pitchers = ['PP15']
+pitchers = ['PP01','PP02','PP03','PP04','PP05','PP06','PP07','PP08','PP12','PP14','PP15'] #PP01 - PP15\
 length = 'Pitches' # Pitches or Innings
-filter_state = 'Filtered' # Unfiltered or Filtered
-Cumulative_inning_state = False
+Polyfit = 1
 
 for pitcher in pitchers:
     """
@@ -154,29 +152,29 @@ for pitcher in pitchers:
         side = 'right'
 
     """
-    Output setup. For cumulative ridgelines set cumulative report to True.
+    Cumulative output setup.
     """
     Fatigue_dictionary = {}
     segments = ['hand', 'forearm', 'upperarm']
     outputs = ['max_norm_moment', 'max_abduction_moment']
+    Cumulative_Fatigue_dictionary = dict.fromkeys(segments)
     for segment in segments:
-        Fatigue_dictionary[segment] = {}
+        Cumulative_Fatigue_dictionary[segment] = dict.fromkeys(outputs)
         for output in outputs:
-            Fatigue_dictionary[segment][output] = {}
+            Cumulative_Fatigue_dictionary[segment][output] = dict()
 
     for Inning in Innings:
 
         """
-        Override Fatigue dictionary if cumulative == False
+        Override Fatigue dictionary
         """
-        if Cumulative_inning_state == False:
-            Fatigue_dictionary = {}
-            segments = ['hand', 'forearm', 'upperarm']
-            outputs = ['max_norm_moment', 'max_abduction_moment']
-            for segment in segments:
-                Fatigue_dictionary[segment] = {}
-                for output in outputs:
-                    Fatigue_dictionary[segment][output] = {}
+        Fatigue_dictionary = {}
+        segments = ['hand', 'forearm', 'upperarm']
+        outputs = ['max_norm_moment', 'max_abduction_moment']
+        for segment in segments:
+            Fatigue_dictionary[segment] = {}
+            for output in outputs:
+                Fatigue_dictionary[segment][output] = {}
 
         """
         Inning setup
@@ -245,15 +243,14 @@ for pitcher in pitchers:
                 j = 1
 
             # Save model as pickle
-            if Cumulative_inning_state == False:
-                # Path where the pickle will be saved. Last part will be the name of the file
-                filename = 'Models' + '/' + length + '/' + filter_state + '/' + pitcher + '/' + Inning + '/' + pitch_number
-                # Initialize the pickle file
-                outfile = open(filename, 'wb')
-                # Write the dictionary into the binary file
-                pickle.dump(model, outfile)
-                outfile.close()
-                print('model has been saved.')
+            # Path where the pickle will be saved. Last part will be the name of the file
+            filename = 'Models' + '/' + length + '/' + 'Unfiltered' + '/' + pitcher + '/' + Inning + '/' + pitch_number
+            # Initialize the pickle file
+            outfile = open(filename, 'wb')
+            # Write the dictionary into the binary file
+            pickle.dump(model, outfile)
+            outfile.close()
+            print('model has been saved.')
 
             # Calculate the net forces according the newton-euler method
             F_joint = f.calc_net_reaction_force(model)
@@ -321,11 +318,6 @@ for pitcher in pitchers:
                 # Visualisation of the global and local net moments
                 f.plot_inning_segment_moments(synced_seg_M_joint,pitch_number,figure_number = 2)
 
-                if filter_state == 'Filtered':
-                    Polyfit = 1
-                else:
-                    Polyfit = 0
-
                 # Max moment data for fatigue study
                 Fatigue_dictionary = f.max_moment_data(Fatigue_dictionary, seg_M_joint, segments, pitch_number, Polyfit)
 
@@ -338,25 +330,41 @@ for pitcher in pitchers:
         """
         Save the max moment data to results folder
         """
-        if Cumulative_inning_state == False:
+        if Polyfit == 1:
+            poly_state = 'Filtered'
+        else:
+            poly_state = 'Unfiltered'
+
         # Path where the pickle will be saved. Last part will be the name of the file
-            filename = 'Results/Pitches/'+filter_state+'/' + pitcher + '/' + Inning + '/' + 'Outputs'
-            # Initialize the pickle file
-            outfile = open(filename, 'wb')
-            # Write the dictionary into the binary file
-            pickle.dump(Fatigue_dictionary, outfile)
-            outfile.close()
-            print('Fatigue dictionary has been saved.')
+        filename = 'Results/Pitches/'+poly_state+'/' + pitcher + '/' + Inning + '/' + 'Outputs'
+        # Initialize the pickle file
+        outfile = open(filename, 'wb')
+        # Write the dictionary into the binary file
+        pickle.dump(Fatigue_dictionary, outfile)
+        outfile.close()
+        print('Fatigue dictionary has been saved.')
 
         """
-        Save cumulative report
+        Update cumulative report
         """
-        if Cumulative_inning_state == True:
-            # Path where the pickle will be saved. Last part will be the name of the file
-            filename = 'Results/Pitches/'+filter_state+'/' + pitcher + '/' + Inning + '/' + 'Cumulative_til_this_point'
-            # Initialize the pickle file
-            outfile = open(filename, 'wb')
-            # Write the dictionary into the binary file
-            pickle.dump(Fatigue_dictionary, outfile)
-            outfile.close()
-            print('Fatigue dictionary has been saved.')
+
+        for segment in Cumulative_Fatigue_dictionary:
+            for key in Fatigue_dictionary[segment]:
+                if (key in Cumulative_Fatigue_dictionary[segment]):
+                    pass
+                else:
+                    Cumulative_Fatigue_dictionary[segment][key] = dict()
+                for pitch in Fatigue_dictionary[segment][key]:
+                    Cumulative_Fatigue_dictionary[segment][key][pitch] = Fatigue_dictionary[segment][key][pitch]
+
+    """
+    Save cumulative report
+    """
+    # Path where the pickle will be saved. Last part will be the name of the file
+    filename = 'Results/Pitches/'+poly_state+'/' + pitcher + '/' + Inning + '/' + 'Cumulative_til_this_point'
+    # Initialize the pickle file
+    outfile = open(filename, 'wb')
+    # Write the dictionary into the binary file
+    pickle.dump(Cumulative_Fatigue_dictionary, outfile)
+    outfile.close()
+    print('Fatigue dictionary has been saved.')
